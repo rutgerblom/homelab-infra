@@ -1,6 +1,6 @@
 # Provider Box
 
-Provider Box is a small Ubuntu/Debian bootstrap project for standing up shared infrastructure services on a single host. It is currently opinionated around lab and homelab environments and ships templates for:
+Provider Box is a small Ubuntu/Debian bootstrap project for standing up shared infrastructure services on a single host. It is opinionated around lab and homelab environments and ships templates for:
 
 - Unbound for internal DNS
 - Chrony for internal NTP
@@ -18,7 +18,7 @@ The repository is intentionally simple: copy the example configuration, update v
 
 Provider Box is a natural companion for VMware Cloud Foundation (VCF) lab environments, particularly VCF 9 deployments.
 
-VCF deployments depend on a set of external infrastructure services that are not provided by the platform itself, such as DNS, NTP, and identity providers. DNS and NTP must be available and correctly configured before deployment and are critical for successful bring-up. Additional services such as identity providers, logging, and storage are typically integrated after deployment to support ongoing operation.
+VCF deployments depend on a set of external infrastructure services that are not provided by the platform itself. DNS and NTP must be available and correctly configured before deployment and are critical for successful bring-up. Identity providers and other services are typically integrated after deployment to support ongoing operation.
 
 Provider Box provides a lightweight way to run these supporting services on a single host, making it easier to build and operate VCF lab and PoC environments without relying on external enterprise infrastructure.
 
@@ -179,17 +179,22 @@ pod-240-vc01.sddc.lab 10.203.240.10
 - `CA_FQDN` is generated automatically from `config/provider-box.env`
 - This CA service does not yet replace the existing Keycloak certificate generation flow
 - step-ca auto-initializes on first start using the documented Docker init variables
-- Create the password file referenced by `CA_PASSWORD_FILE` before running `--ca`
-- The init variables are only used on the first run, when `CA_DATA_DIR` does not already contain an initialized step-ca state
+- `CA_PASSWORD_FILE` must exist before running `--ca`
+- `CA_PASSWORD_FILE` must be located under `CA_DATA_DIR`
+- `CA_PASSWORD_FILE` must be readable by the container user (UID 1000)
+- Note: Initialization only occurs when `CA_DATA_DIR` does not already contain a step-ca configuration. To reinitialize the CA, remove the contents of `CA_DATA_DIR`.
 - Use `CA_NAME`, `CA_FQDN`, `CA_PROVISIONER_NAME`, and `CA_ENABLE_ACME` to control the initial bootstrap configuration
+- The root certificate can be retrieved from `https://<CA_FQDN>:<CA_PORT>/roots.pem`
+- Clients must trust this certificate to use certificates issued by this CA
 
 ### Keycloak
 
 - Deploys with Docker Compose
 - Exposes HTTPS on `https://<KEYCLOAK_FQDN>:8443`
-- Generates an internal CA and a host certificate containing both DNS and IP SANs
+- Generates a self-signed certificate for the Keycloak service
+- This can be replaced with certificates issued by step-ca in future integrations
 
-Important output files in `${WORKDIR}`:
+Important output files in `${WORKDIR}` for the current Keycloak bootstrap flow (self-signed CA):
 
 - `provider-box-ca.crt` for client trust import
 - `keycloak-chain.crt` for full certificate chain distribution
