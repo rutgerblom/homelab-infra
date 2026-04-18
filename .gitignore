@@ -1,0 +1,14 @@
+# Local configuration
+config/provider-box.env
+
+# Editor files
+.vscode/
+*.swp
+
+# OS files
+.DS_Store
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.log
