@@ -7,7 +7,7 @@ services:
       - "8443:8443"
     environment:
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: change-me-now
+      KEYCLOAK_ADMIN_PASSWORD: CHANGE_ME
       KC_HOSTNAME: auth.sddc.lab
       KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/certs/auth.sddc.lab.crt
       KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/certs/auth.sddc.lab.key
