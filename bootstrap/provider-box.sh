@@ -15,6 +15,7 @@ usage() {
 Usage:
   sudo bash bootstrap/provider-box.sh --unbound
   sudo bash bootstrap/provider-box.sh --ntp
+  sudo bash bootstrap/provider-box.sh --rsyslog
   sudo bash bootstrap/provider-box.sh --keycloak
   sudo bash bootstrap/provider-box.sh --s3
   sudo bash bootstrap/provider-box.sh --sftp
@@ -95,6 +96,11 @@ unbound_pkgs() {
 ntp_pkgs() {
   apt_update_once
   install_pkg chrony
+}
+
+rsyslog_pkgs() {
+  apt_update_once
+  install_pkg rsyslog
 }
 
 docker_pkgs() {
@@ -262,6 +268,10 @@ require_module_file "${BOOTSTRAP_DIR}/sftp.sh"
 # shellcheck disable=SC1090
 source "${BOOTSTRAP_DIR}/sftp.sh"
 
+require_module_file "${BOOTSTRAP_DIR}/rsyslog.sh"
+# shellcheck disable=SC1090
+source "${BOOTSTRAP_DIR}/rsyslog.sh"
+
 require_root
 
 [[ $# -eq 1 ]] || { usage; exit 1; }
@@ -279,6 +289,12 @@ case "$1" in
     load_env
     require_env_vars
     do_ntp
+    ;;
+  --rsyslog)
+    require_env_file
+    load_env
+    require_env_vars
+    do_rsyslog
     ;;
   --keycloak)
     require_env_file
@@ -305,6 +321,7 @@ case "$1" in
     require_records_file
     do_unbound
     do_ntp
+    do_rsyslog
     do_keycloak
     do_s3
     do_sftp

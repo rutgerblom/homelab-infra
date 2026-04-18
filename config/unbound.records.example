@@ -25,3 +25,4 @@ auth.sddc.lab 192.168.12.121
 dns.sddc.lab 192.168.12.121
 s3.sddc.lab 192.168.12.121
 sftp.sddc.lab 192.168.12.121
+syslog.sddc.lab 192.168.12.121

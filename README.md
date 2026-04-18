@@ -4,13 +4,14 @@ Provider Box is a small Ubuntu/Debian bootstrap project for standing up shared i
 
 - Unbound for internal DNS
 - Chrony for internal NTP
+- rsyslog for centralized syslog collection
 - Keycloak for identity
 - SeaweedFS for S3-compatible object storage
 - SFTPGo for SFTP file transfer
 
 The repository is intentionally simple: copy the example configuration, update values for your environment, and run the bootstrap script for the services you want.
 
-`bootstrap/provider-box.sh` remains the entrypoint and loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/keycloak.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
+`bootstrap/provider-box.sh` remains the entrypoint and loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/keycloak.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
 
 ## What This Repository Is
 
@@ -35,6 +36,7 @@ bootstrap/
   keycloak.sh
   ntp.sh
   provider-box.sh
+  rsyslog.sh
   s3.sh
   sftp.sh
 
@@ -45,6 +47,7 @@ config/
 templates/
   unbound.conf.tpl
   chrony.conf.tpl
+  rsyslog.conf.tpl
   docker-compose.keycloak.yml.tpl
   docker-compose.s3.yml.tpl
   docker-compose.sftpgo.yml.tpl
@@ -60,12 +63,13 @@ cp config/unbound.records.example config/unbound.records
 ```
 
 2. Update `config/provider-box.env` and `config/unbound.records` for your environment.
-   If you enable S3 or SFTP, make sure `S3_FQDN` and/or `SFTP_FQDN` are also present in `config/unbound.records` so Unbound generates the matching A and PTR records.
+   If you enable S3, SFTP, or rsyslog, make sure `S3_FQDN`, `SFTP_FQDN`, and/or `SYSLOG_FQDN` are also present in `config/unbound.records` so Unbound generates the matching A and PTR records.
 3. Run the bootstrap script for the component you want:
 
 ```bash
 sudo bash bootstrap/provider-box.sh --unbound
 sudo bash bootstrap/provider-box.sh --ntp
+sudo bash bootstrap/provider-box.sh --rsyslog
 sudo bash bootstrap/provider-box.sh --keycloak
 sudo bash bootstrap/provider-box.sh --s3
 sudo bash bootstrap/provider-box.sh --sftp
@@ -98,7 +102,7 @@ The configured Gitleaks hook scans for accidentally committed secrets before a c
 
 ## Configuration Model
 
-`config/provider-box.env` defines host, DNS, NTP, certificate, Keycloak, S3, and SFTP settings.
+`config/provider-box.env` defines host, DNS, NTP, rsyslog, certificate, Keycloak, S3, and SFTP settings.
 
 The bootstrap script now validates configuration more strictly before making changes:
 
@@ -112,7 +116,7 @@ The bootstrap script now validates configuration more strictly before making cha
 - DNS record entries must follow `<fqdn> <ip>` format
 - Environment variables from `config/provider-box.env` are exported before template rendering so `envsubst` can populate all template values correctly
 
-Keycloak-specific validation only runs for `--keycloak` and `--all`. S3-specific validation only runs for `--s3` and `--all`. SFTP-specific validation only runs for `--sftp` and `--all`.
+rsyslog-specific validation only runs for `--rsyslog` and `--all`. Keycloak-specific validation only runs for `--keycloak` and `--all`. S3-specific validation only runs for `--s3` and `--all`. SFTP-specific validation only runs for `--sftp` and `--all`.
 
 ## Service Notes
 
@@ -140,6 +144,14 @@ pod-240-vc01.sddc.lab 10.203.240.10
 - Uses configured upstream NTP servers
 - Allows NTP service for the configured internal networks
 - The example configuration allows all RFC1918 ranges: `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16`
+
+### rsyslog
+
+- Runs natively on the host, not in Docker
+- Exposes a centralized syslog endpoint on `syslog://<SYSLOG_FQDN>:<SYSLOG_PORT>` using both UDP and TCP
+- Intended for log forwarding from VCF-related systems such as ESXi, NSX, and vCenter
+- Writes per-host, per-program logs under `SYSLOG_LOG_DIR`
+- If you want Provider Box DNS to resolve the syslog hostname, add `SYSLOG_FQDN` to `config/unbound.records`
 
 ### Keycloak
 
