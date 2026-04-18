@@ -172,20 +172,25 @@ pod-240-vc01.sddc.lab 10.203.240.10
 
 ### step-ca
 
-- Deploys as a single-node Smallstep `step-ca` service using Docker Compose
-- Exposes the CA endpoint on `https://<CA_FQDN>:<CA_PORT>`
-- Persists CA data under `CA_DATA_DIR`
-- Intended as a lightweight private CA for lab, homelab, and VCF companion use
-- `CA_FQDN` is generated automatically from `config/provider-box.env`
-- step-ca issues the Keycloak server certificate used by the Provider Box Keycloak deployment
-- step-ca auto-initializes on first start using the documented Docker init variables
-- `CA_PASSWORD_FILE` must exist before running `--ca`
-- `CA_PASSWORD_FILE` must be located under `CA_DATA_DIR`
-- `CA_PASSWORD_FILE` must be readable by the container user (UID 1000)
-- Note: Initialization only occurs when `CA_DATA_DIR` does not already contain a step-ca configuration. To reinitialize the CA, remove the contents of `CA_DATA_DIR`.
-- Use `CA_NAME`, `CA_FQDN`, `CA_PROVISIONER_NAME`, and `CA_ENABLE_ACME` to control the initial bootstrap configuration
-- The root certificate can be retrieved from `https://<CA_FQDN>:<CA_PORT>/roots.pem`
-- step-ca can be used to issue certificates for Provider Box services and other lab integrations
+- Deploys a single-node Smallstep `step-ca` using Docker Compose
+- Exposes the CA at `https://<CA_FQDN>:<CA_PORT>`
+- Persists all CA data under `CA_DATA_DIR`
+- Automatically initializes on first start and issues certificates for Provider Box services (including Keycloak)
+
+Requirement:
+
+- `CA_PASSWORD_FILE` must exist under `CA_DATA_DIR` and be readable by UID 1000
+
+Notes:
+
+- Delete `CA_DATA_DIR` to reinitialize the CA
+- Root certificate: `https://<CA_FQDN>:<CA_PORT>/roots.pem`
+
+Notes:
+
+- Reinitializing the CA requires removing the contents of `CA_DATA_DIR`
+- The root certificate is available at `https://<CA_FQDN>:<CA_PORT>/roots.pem`
+- Optional bootstrap parameters: `CA_NAME`, `CA_FQDN`, `CA_PROVISIONER_NAME`, `CA_ENABLE_ACME`
 
 ### Keycloak
 
