@@ -1,4 +1,4 @@
-# Local configuration
+# Local configuration (contains secrets)
 config/provider-box.env
 
 # Editor files
@@ -12,3 +12,6 @@ config/provider-box.env
 *.tmp
 *.bak
 *.log
+
+# Optional: local test artifacts
+*.out
