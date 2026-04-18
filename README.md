@@ -13,6 +13,16 @@ The repository is intentionally simple: copy the example configuration, update v
 
 `bootstrap/provider-box.sh` remains the entrypoint and loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/keycloak.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
 
+## VCF Lab Companion
+
+Provider Box is a natural companion for VMware Cloud Foundation (VCF) lab environments.
+
+VCF deployments depend on a set of external infrastructure services that are not provided by the platform itself, such as DNS, NTP, identity providers, and certificate authorities. These services must be available and correctly configured before deployment and are critical for successful bring-up and ongoing operation.
+
+Provider Box provides a lightweight way to run these supporting services on a single host, making it easier to build and operate VCF lab and PoC environments without relying on external enterprise infrastructure.
+
+This is particularly useful in homelab or isolated environments where DNS, NTP, identity, logging, and storage services need to be self-contained.
+
 ## What This Repository Is
 
 - A reusable shell-based starter for a "provider box" or shared-services VM
