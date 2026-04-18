@@ -62,5 +62,5 @@ services:
     ports:
       - "${NETBOX_PORT}:8443"
     volumes:
-      - ${WORKDIR}/netbox/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${NETBOX_DIR}/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ${NETBOX_DIR}/certs:/etc/provider-box/certs:ro

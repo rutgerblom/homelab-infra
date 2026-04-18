@@ -158,13 +158,13 @@ issue_netbox_certificates() {
 }
 
 render_netbox_stack() {
-  install -d -m 0755 "${WORKDIR}/netbox" "${NETBOX_DIR}" "${NETBOX_MEDIA_DIR}" "${NETBOX_POSTGRES_DATA_DIR}" "${NETBOX_REDIS_DATA_DIR}"
+  install -d -m 0755 "${NETBOX_DIR}" "${NETBOX_DIR}/certs" "${NETBOX_MEDIA_DIR}" "${NETBOX_POSTGRES_DATA_DIR}" "${NETBOX_REDIS_DATA_DIR}"
   build_netbox_dns_seed_block
   build_netbox_service_seed_block
-  render_template "${TEMPLATE_DIR}/docker-compose.netbox.yml.tpl" "${WORKDIR}/netbox/docker-compose.yml"
+  render_template "${TEMPLATE_DIR}/docker-compose.netbox.yml.tpl" "${NETBOX_DIR}/docker-compose.yml"
   DOLLAR='$'
   export DOLLAR
-  render_template "${TEMPLATE_DIR}/netbox-nginx.conf.tpl" "${WORKDIR}/netbox/nginx.conf"
+  render_template "${TEMPLATE_DIR}/netbox-nginx.conf.tpl" "${NETBOX_DIR}/nginx.conf"
 }
 
 verify_netbox_stack() {
@@ -417,7 +417,7 @@ do_netbox() {
   issue_netbox_certificates
   render_netbox_stack
   (
-    cd "${WORKDIR}/netbox"
+    cd "${NETBOX_DIR}"
     docker compose down || true
     docker compose up -d
     verify_netbox_stack
