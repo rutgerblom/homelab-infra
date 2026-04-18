@@ -239,25 +239,33 @@ require_module_file "${BOOTSTRAP_DIR}/keycloak.sh"
 source "${BOOTSTRAP_DIR}/keycloak.sh"
 
 require_root
-require_env_file
-load_env
-require_env_vars
-
 
 [[ $# -eq 1 ]] || { usage; exit 1; }
 
 case "$1" in
   --unbound)
+    require_env_file
+    load_env
+    require_env_vars
     require_records_file
     do_unbound
     ;;
   --ntp)
+    require_env_file
+    load_env
+    require_env_vars
     do_ntp
     ;;
   --keycloak)
+    require_env_file
+    load_env
+    require_env_vars
     do_keycloak
     ;;
   --all)
+    require_env_file
+    load_env
+    require_env_vars
     require_records_file
     do_unbound
     do_ntp
