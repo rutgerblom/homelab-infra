@@ -64,7 +64,7 @@ cp config/unbound.records.example config/unbound.records
 ```
 
 2. Update `config/provider-box.env` and `config/unbound.records` for your environment.
-   If you enable S3, SFTP, or rsyslog, make sure `S3_FQDN`, `SFTP_FQDN`, and/or `SYSLOG_FQDN` are also present in `config/unbound.records` so Unbound generates the matching A and PTR records.
+   Provider Box service FQDNs are generated automatically from `config/provider-box.env`. Use `config/unbound.records` only for external or custom records that should also get generated A and PTR entries.
 3. Run the bootstrap script for the component you want:
 
 ```bash
@@ -124,7 +124,9 @@ rsyslog-specific validation only runs for `--rsyslog` and `--all`. Keycloak-spec
 ### Unbound
 
 - Serves the configured search domain as a static local zone
-- Generates both forward and reverse records from `config/unbound.records`
+- Generates Provider Box service records automatically from `config/provider-box.env`
+- Uses `config/unbound.records` only for external/custom records
+- Uses `DNS_FQDN` as the canonical PTR name for `HOST_IP`
 - Uses the configured upstream forwarder for external lookups
 - The example configuration allows DNS queries from all RFC1918 ranges: `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16`
 

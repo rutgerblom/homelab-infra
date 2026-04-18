@@ -15,6 +15,7 @@ do_unbound() {
   unbound_pkgs
   configure_resolv_conf
   cleanup_legacy_unbound_config
+  build_provider_box_dns_block
   build_dns_record_block
   render_template "${TEMPLATE_DIR}/unbound.conf.tpl" /etc/unbound/unbound.conf.d/provider-box.conf
   require_command unbound-checkconf

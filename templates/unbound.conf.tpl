@@ -6,6 +6,8 @@ server:
 
 local-zone: "${SEARCH_DOMAIN}." static
 
+${PROVIDER_BOX_DNS_BLOCK}
+
 ${DNS_RECORD_BLOCK}
 
 forward-zone:

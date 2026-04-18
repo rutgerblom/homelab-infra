@@ -138,6 +138,17 @@ local-data-ptr: \"${ip} ${fqdn}\"
   export DNS_RECORD_BLOCK
 }
 
+build_provider_box_dns_block() {
+  PROVIDER_BOX_DNS_BLOCK="local-data: \"${DNS_FQDN} A ${HOST_IP}\"
+local-data: \"${KEYCLOAK_FQDN} A ${HOST_IP}\"
+local-data: \"${S3_FQDN} A ${HOST_IP}\"
+local-data: \"${SFTP_FQDN} A ${HOST_IP}\"
+local-data: \"${SYSLOG_FQDN} A ${HOST_IP}\"
+local-data-ptr: \"${HOST_IP} ${DNS_FQDN}\"
+"
+  export PROVIDER_BOX_DNS_BLOCK
+}
+
 render_template() {
   require_command envsubst
   require_template_file "$1"
