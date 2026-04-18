@@ -17,11 +17,19 @@ require_ca_vars() {
 }
 
 do_ca() {
-  require_ca_vars
   common_pkgs
   docker_pkgs
   install -d -m 0755 "${WORKDIR}/step-ca" "${CA_DATA_DIR}" "$(dirname "${CA_PASSWORD_FILE}")"
-  [[ -f "${CA_PASSWORD_FILE}" ]] || fail "Missing CA password file: ${CA_PASSWORD_FILE}"
+
+  if [[ ! -f "${CA_PASSWORD_FILE}" ]]; then
+    echo "CA password file not found. Generating one..."
+    require_command openssl
+    openssl rand -base64 32 > "${CA_PASSWORD_FILE}"
+    chmod 600 "${CA_PASSWORD_FILE}"
+    echo "Generated CA password at: ${CA_PASSWORD_FILE}"
+  fi
+
+  require_ca_vars
 
   CA_PASSWORD_FILE_IN_CONTAINER="/home/step/${CA_PASSWORD_FILE#${CA_DATA_DIR}/}"
   if [[ "${CA_ENABLE_ACME}" == "true" ]]; then
