@@ -5,13 +5,14 @@ Provider Box is a small Ubuntu/Debian bootstrap project for standing up shared i
 - Unbound for internal DNS
 - Chrony for internal NTP
 - rsyslog for centralized syslog collection
+- step-ca for a lightweight private certificate authority
 - Keycloak for identity
 - SeaweedFS for S3-compatible object storage
 - SFTPGo for SFTP file transfer
 
 The repository is intentionally simple: copy the example configuration, update values for your environment, and run the bootstrap script for the services you want.
 
-`bootstrap/provider-box.sh` remains the entrypoint and loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/keycloak.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
+`bootstrap/provider-box.sh` remains the entrypoint and loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/ca.sh`, `bootstrap/keycloak.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
 
 ## VCF Lab Companion
 
@@ -36,13 +37,14 @@ This is particularly useful in homelab or isolated environments where DNS, NTP, 
 - Static IP already configured
 - Access to Ubuntu/Debian package repositories
 - `bind9-dnsutils` available from the host package manager for DNS tooling
-- Docker packages available from the host package manager when deploying Keycloak, SeaweedFS S3, or SFTPGo
+- Docker packages available from the host package manager when deploying step-ca, Keycloak, SeaweedFS S3, or SFTPGo
 - Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13 (trixie), the `docker-compose` package provides this functionality.
 
 ## Repository Layout
 
 ```text
 bootstrap/
+  ca.sh
   dns.sh
   keycloak.sh
   ntp.sh
@@ -59,6 +61,7 @@ templates/
   unbound.conf.tpl
   chrony.conf.tpl
   rsyslog.conf.tpl
+  docker-compose.step-ca.yml.tpl
   docker-compose.keycloak.yml.tpl
   docker-compose.s3.yml.tpl
   docker-compose.sftpgo.yml.tpl
@@ -81,6 +84,7 @@ cp config/unbound.records.example config/unbound.records
 sudo bash bootstrap/provider-box.sh --unbound
 sudo bash bootstrap/provider-box.sh --ntp
 sudo bash bootstrap/provider-box.sh --rsyslog
+sudo bash bootstrap/provider-box.sh --ca
 sudo bash bootstrap/provider-box.sh --keycloak
 sudo bash bootstrap/provider-box.sh --s3
 sudo bash bootstrap/provider-box.sh --sftp
@@ -113,7 +117,7 @@ The configured Gitleaks hook scans for accidentally committed secrets before a c
 
 ## Configuration Model
 
-`config/provider-box.env` defines host, DNS, NTP, rsyslog, certificate, Keycloak, S3, and SFTP settings.
+`config/provider-box.env` defines host, DNS, NTP, rsyslog, CA, certificate, Keycloak, S3, and SFTP settings.
 
 The bootstrap script now validates configuration more strictly before making changes:
 
@@ -127,7 +131,7 @@ The bootstrap script now validates configuration more strictly before making cha
 - DNS record entries must follow `<fqdn> <ip>` format
 - Environment variables from `config/provider-box.env` are exported before template rendering so `envsubst` can populate all template values correctly
 
-rsyslog-specific validation only runs for `--rsyslog` and `--all`. Keycloak-specific validation only runs for `--keycloak` and `--all`. S3-specific validation only runs for `--s3` and `--all`. SFTP-specific validation only runs for `--sftp` and `--all`.
+rsyslog-specific validation only runs for `--rsyslog` and `--all`. CA-specific validation only runs for `--ca` and `--all`. Keycloak-specific validation only runs for `--keycloak` and `--all`. S3-specific validation only runs for `--s3` and `--all`. SFTP-specific validation only runs for `--sftp` and `--all`.
 
 ## Service Notes
 
@@ -164,7 +168,27 @@ pod-240-vc01.sddc.lab 10.203.240.10
 - Exposes a centralized syslog endpoint on `syslog://<SYSLOG_FQDN>:<SYSLOG_PORT>` using both UDP and TCP
 - Intended for log forwarding from VCF-related systems such as ESXi, NSX, and vCenter
 - Writes per-host, per-program logs under `SYSLOG_LOG_DIR`
-- If you want Provider Box DNS to resolve the syslog hostname, add `SYSLOG_FQDN` to `config/unbound.records`
+- `SYSLOG_FQDN` is generated automatically from `config/provider-box.env`
+
+### step-ca
+
+- Deploys as a single-node Smallstep `step-ca` service using Docker Compose
+- Exposes the CA endpoint on `https://<CA_FQDN>:<CA_PORT>`
+- Persists CA data under `CA_DATA_DIR`
+- Intended as a lightweight private CA for lab, homelab, and VCF companion use
+- `CA_FQDN` is generated automatically from `config/provider-box.env`
+- This CA service does not yet replace the existing Keycloak certificate generation flow
+- Before first start, initialize step-ca manually in `CA_DATA_DIR` using the official Smallstep image and `step ca init`, then rerun `--ca`
+- Use `CA_NAME` as the CA name and `CA_FQDN` as the CA DNS name during the manual initialization flow
+
+Example initialization flow:
+
+```bash
+sudo docker run --rm -it \
+  -v /opt/step-ca:/home/step \
+  smallstep/step-ca:latest \
+  step ca init
+```
 
 ### Keycloak
 
@@ -183,7 +207,7 @@ Important output files in `${WORKDIR}`:
 - Uses Docker Compose
 - Exposes the S3-compatible endpoint on `http://<S3_FQDN>:<S3_PORT>`
 - Persists object data under `S3_DATA_DIR`
-- Requires the `S3_FQDN` hostname to be present in `config/unbound.records` if you want it resolvable through the built-in DNS setup
+- `S3_FQDN` is generated automatically from `config/provider-box.env`
 
 ### SFTPGo
 
@@ -192,7 +216,7 @@ Important output files in `${WORKDIR}`:
 - Exposes the admin UI on `http://<SFTP_FQDN>:<SFTP_ADMIN_PORT>`
 - Persists service data under `SFTP_DATA_DIR`
 - Persists the container home and generated host keys under `SFTP_HOME_DIR`
-- Requires the `SFTP_FQDN` hostname to be present in `config/unbound.records` if you want it resolvable through the built-in DNS setup
+- `SFTP_FQDN` is generated automatically from `config/provider-box.env`
 - Expected SFTP settings in `config/provider-box.env`: `SFTP_FQDN`, `SFTP_PORT`, `SFTP_ADMIN_PORT`, `SFTP_DATA_DIR`, `SFTP_HOME_DIR`
 - After deployment, open the admin UI and create the first admin account there
 - No SFTPGo admin credentials are bootstrapped automatically by Provider Box

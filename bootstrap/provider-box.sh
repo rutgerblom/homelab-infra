@@ -16,6 +16,7 @@ Usage:
   sudo bash bootstrap/provider-box.sh --unbound
   sudo bash bootstrap/provider-box.sh --ntp
   sudo bash bootstrap/provider-box.sh --rsyslog
+  sudo bash bootstrap/provider-box.sh --ca
   sudo bash bootstrap/provider-box.sh --keycloak
   sudo bash bootstrap/provider-box.sh --s3
   sudo bash bootstrap/provider-box.sh --sftp
@@ -140,6 +141,7 @@ local-data-ptr: \"${ip} ${fqdn}\"
 
 build_provider_box_dns_block() {
   PROVIDER_BOX_DNS_BLOCK="local-data: \"${DNS_FQDN} A ${HOST_IP}\"
+local-data: \"${CA_FQDN} A ${HOST_IP}\"
 local-data: \"${KEYCLOAK_FQDN} A ${HOST_IP}\"
 local-data: \"${S3_FQDN} A ${HOST_IP}\"
 local-data: \"${SFTP_FQDN} A ${HOST_IP}\"
@@ -233,14 +235,13 @@ validate_records_file() {
 
 require_env_vars() {
   local var
-  for var in HOST_IP SEARCH_DOMAIN DNS_FQDN KEYCLOAK_FQDN ALLOW_NET_1 ALLOW_NET_2 ALLOW_NET_3 UNBOUND_FORWARDER CHRONY_SERVER_1 CHRONY_SERVER_2 CHRONY_SERVER_3 WORKDIR KEYCLOAK_DIR; do
+  for var in HOST_IP SEARCH_DOMAIN DNS_FQDN ALLOW_NET_1 ALLOW_NET_2 ALLOW_NET_3 UNBOUND_FORWARDER CHRONY_SERVER_1 CHRONY_SERVER_2 CHRONY_SERVER_3 WORKDIR KEYCLOAK_DIR; do
     [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
   done
 
   validate_var_ipv4 "${HOST_IP}"
   validate_var_fqdn "${SEARCH_DOMAIN}"
   validate_var_fqdn "${DNS_FQDN}"
-  validate_var_fqdn "${KEYCLOAK_FQDN}"
   validate_var_cidr "${ALLOW_NET_1}"
   validate_var_cidr "${ALLOW_NET_2}"
   validate_var_cidr "${ALLOW_NET_3}"
@@ -285,6 +286,10 @@ require_module_file "${BOOTSTRAP_DIR}/rsyslog.sh"
 # shellcheck disable=SC1090
 source "${BOOTSTRAP_DIR}/rsyslog.sh"
 
+require_module_file "${BOOTSTRAP_DIR}/ca.sh"
+# shellcheck disable=SC1090
+source "${BOOTSTRAP_DIR}/ca.sh"
+
 require_root
 
 [[ $# -eq 1 ]] || { usage; exit 1; }
@@ -308,6 +313,12 @@ case "$1" in
     load_env
     require_env_vars
     do_rsyslog
+    ;;
+  --ca)
+    require_env_file
+    load_env
+    require_env_vars
+    do_ca
     ;;
   --keycloak)
     require_env_file
@@ -335,6 +346,7 @@ case "$1" in
     do_unbound
     do_ntp
     do_rsyslog
+    do_ca
     do_keycloak
     do_s3
     do_sftp
