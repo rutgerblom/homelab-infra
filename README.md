@@ -1,17 +1,30 @@
 # Provider Box
 
-Provider Box is a lightweight Ubuntu/Linux-based shared-services host for external dependencies commonly required around a VCF 9 environment.
+Provider Box is a small Ubuntu/Debian bootstrap project for standing up shared infrastructure services on a single host. It is currently opinionated around lab and homelab environments and ships templates for:
 
-## Current scope
+- Unbound for internal DNS
+- Chrony for internal NTP
+- Keycloak for identity
 
-- Unbound (DNS)
-- Chrony (NTP)
-- Keycloak (Identity)
+The repository is intentionally simple: copy the example configuration, update values for your environment, and run the bootstrap script for the services you want.
 
----
+## What This Repository Is
 
-## Repository layout
+- A reusable shell-based starter for a "provider box" or shared-services VM
+- A template-driven setup that keeps generated service config separate from repo-managed source files
+- A good fit for lab, PoC, or homelab environments where you want fast repeatable setup
 
+## What It Assumes
+
+- Ubuntu or Debian-based host
+- Root or `sudo` access
+- Static IP already configured
+- Access to Ubuntu/Debian package repositories
+- Docker packages available from the host package manager when deploying Keycloak
+
+## Repository Layout
+
+```text
 bootstrap/
   provider-box.sh
 
@@ -25,114 +38,97 @@ templates/
   docker-compose.keycloak.yml.tpl
 
 legacy/
+```
 
----
+## Quick Start
 
-## Prerequisites
+1. Copy the example files:
 
-- Ubuntu / Debian-based system
-- Root or sudo access
-- Static IP configured on the host
-
----
-
-## Setup
-
+```bash
 cp config/provider-box.env.example config/provider-box.env
 cp config/unbound.records.example config/unbound.records
+```
 
-Edit both files before running anything.
+2. Update `config/provider-box.env` and `config/unbound.records` for your environment.
+3. Run the bootstrap script for the component you want:
 
----
-
-## Usage
-
+```bash
 sudo bash bootstrap/provider-box.sh --unbound
 sudo bash bootstrap/provider-box.sh --ntp
 sudo bash bootstrap/provider-box.sh --keycloak
 sudo bash bootstrap/provider-box.sh --all
+```
 
----
+## Configuration Model
 
-## Configuration validation
+`config/provider-box.env` defines host, DNS, NTP, certificate, and Keycloak settings.
 
-The script validates required variables before execution.
+The bootstrap script now validates configuration more strictly before making changes:
 
-- Missing core variables will stop all operations
-- Keycloak-specific variables are validated only when running:
-  --keycloak or --all
+- Required variables must be set
+- IP addresses must be valid IPv4 values
+- Network allow lists must be valid CIDR values
+- FQDN/domain values must be syntactically valid
+- `WORKDIR` and `KEYCLOAK_DIR` must be absolute paths
+- Keycloak password placeholders such as `CHANGE_ME` are rejected
+- DNS record entries must follow `<fqdn> <ip>` format
 
----
+Keycloak-specific validation only runs for `--keycloak` and `--all`.
 
-## DNS (Unbound)
+## Service Notes
 
-- Authoritative for the configured domain (e.g. sddc.lab)
-- Forward and reverse records are generated automatically
+### Unbound
 
-### Record format
+- Serves the configured search domain as a static local zone
+- Generates both forward and reverse records from `config/unbound.records`
+- Uses the configured upstream forwarder for external lookups
 
-config/unbound.records:
+Record format:
 
+```text
 <fqdn> <ip>
+```
 
 Example:
 
+```text
 pod-240-vc01.sddc.lab 10.203.240.10
+```
 
-This generates:
+### Chrony
 
-- A record
-- PTR record
+- Uses configured upstream NTP servers
+- Allows NTP service for the configured internal networks
 
-This is required for proper VCF functionality.
+### Keycloak
 
----
+- Deploys with Docker Compose
+- Exposes HTTPS on `https://<KEYCLOAK_FQDN>:8443`
+- Generates an internal CA and a host certificate containing both DNS and IP SANs
 
-## NTP (Chrony)
+Important output files in `${WORKDIR}`:
 
-- Uses upstream NTP servers defined in config
-- Serves time to allowed internal networks
+- `provider-box-ca.crt` for client trust import
+- `keycloak-chain.crt` for full certificate chain distribution
 
----
+## Failure Handling
 
-## Keycloak
+The bootstrap script now fails fast when important dependencies or inputs are missing. That includes:
 
-- Runs as a Docker container
-- Exposed on:
+- missing config or template files
+- failed `apt-get update` or package installation
+- packages reported missing after installation
+- required commands such as `apt-get`, `envsubst`, `docker`, or `unbound-checkconf` not being available
 
-https://<KEYCLOAK_FQDN>:8443
+This makes the project safer to reuse in new environments where package availability can differ.
 
-### Certificates
+## Operational Notes
 
-Certificates are generated automatically using an internal CA.
+- Use FQDNs instead of raw IPs where possible
+- Ensure both forward and reverse DNS exist for managed hosts
+- Import the generated CA certificate into client trust stores if you use the generated Keycloak certs
+- `configure_resolv_conf()` rewrites `/etc/resolv.conf` and disables `systemd-resolved`
 
-The certificate includes:
-- FQDN (DNS SAN)
-- IP address (IP SAN)
+## Scope
 
-Output location:
-
-${WORKDIR}
-
-Important files:
-- provider-box-ca.crt → import into clients / VCF trust store
-- keycloak-chain.crt → full certificate chain
-
----
-
-## Notes
-
-- Always use FQDN, not IP
-- DNS must provide both forward and reverse resolution
-- Import the CA certificate into:
-  - browser
-  - OS trust store
-  - VCF SSO configuration
-
----
-
-## Future improvements
-
-- External database for Keycloak (PostgreSQL)
-- Environment templating improvements
-- Optional Ansible-based deployment
+This repository keeps the current structure intact and focuses on a lightweight bootstrap workflow. The `legacy/` directory remains in place as historical reference and is not used by the main bootstrap path.

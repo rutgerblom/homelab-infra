@@ -5,6 +5,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${REPO_ROOT}/config/provider-box.env"
 RECORDS_FILE="${REPO_ROOT}/config/unbound.records"
 TEMPLATE_DIR="${REPO_ROOT}/templates"
+APT_UPDATED=0
+
+trap 'echo "Error: command failed on line ${LINENO}. See output above for details." >&2' ERR
 
 usage() {
   cat <<USAGE
@@ -20,12 +23,33 @@ require_root() {
   [[ "$EUID" -eq 0 ]] || { echo "Run as root"; exit 1; }
 }
 
+fail() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
 require_env_file() {
-  [[ -f "$ENV_FILE" ]] || { echo "Missing $ENV_FILE"; exit 1; }
+  [[ -f "$ENV_FILE" ]] || fail "Missing ${ENV_FILE}"
 }
 
 require_records_file() {
-  [[ -f "$RECORDS_FILE" ]] || { echo "Missing $RECORDS_FILE"; exit 1; }
+  [[ -f "$RECORDS_FILE" ]] || fail "Missing ${RECORDS_FILE}"
+}
+
+require_template_file() {
+  [[ -f "$1" ]] || fail "Missing template: $1"
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
+}
+
+require_package_installed() {
+  local pkg
+  for pkg in "$@"; do
+    dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed" || \
+      fail "Package '${pkg}' is not installed. Check apt output for details."
+  done
 }
 
 load_env() {
@@ -34,14 +58,18 @@ load_env() {
 }
 
 apt_update_once() {
-  if [[ "${APT_UPDATED:-0}" -eq 0 ]]; then
-    apt-get update
+  require_command apt-get
+  if [[ "$APT_UPDATED" -eq 0 ]]; then
+    apt-get update || fail "apt-get update failed"
     APT_UPDATED=1
   fi
 }
 
 install_pkg() {
-  DEBIAN_FRONTEND=noninteractive apt-get install -y "$@"
+  local packages=("$@")
+  DEBIAN_FRONTEND=noninteractive apt-get install -y "${packages[@]}" || \
+    fail "Failed to install packages: ${packages[*]}"
+  require_package_installed "${packages[@]}"
 }
 
 common_pkgs() {
@@ -62,6 +90,7 @@ ntp_pkgs() {
 keycloak_pkgs() {
   apt_update_once
   install_pkg docker.io docker-compose
+  require_command docker
   systemctl enable docker
   systemctl start docker
 }
@@ -92,15 +121,85 @@ local-data-ptr: \"${ip} ${fqdn}\"
 }
 
 render_template() {
+  require_command envsubst
+  require_template_file "$1"
   envsubst < "$1" > "$2"
 }
 
+validate_ipv4() {
+  local ip="$1"
+  [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+
+  local octet
+  IFS='.' read -r -a octets <<< "$ip"
+  for octet in "${octets[@]}"; do
+    (( octet >= 0 && octet <= 255 )) || return 1
+  done
+}
+
+validate_cidr() {
+  local cidr="$1"
+  local ip="${cidr%/*}"
+  local prefix="${cidr##*/}"
+  [[ "$cidr" == */* ]] || return 1
+  validate_ipv4 "$ip" || return 1
+  [[ "$prefix" =~ ^[0-9]{1,2}$|^3[0-2]$ ]] || return 1
+}
+
+validate_fqdn() {
+  local fqdn="$1"
+  [[ "$fqdn" =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$ ]]
+}
+
+validate_path() {
+  local path="$1"
+  [[ "$path" = /* ]]
+}
+
+validate_var_ipv4() {
+  validate_ipv4 "$1" || fail "Invalid IPv4 address: $1"
+}
+
+validate_var_cidr() {
+  validate_cidr "$1" || fail "Invalid CIDR value: $1"
+}
+
+validate_var_fqdn() {
+  validate_fqdn "$1" || fail "Invalid FQDN value: $1"
+}
+
+validate_var_path() {
+  validate_path "$1" || fail "Path must be absolute: $1"
+}
+
+validate_var_not_placeholder() {
+  [[ "$1" != "CHANGE_ME" ]] || fail "Replace placeholder value before continuing"
+}
+
+validate_records_file() {
+  local line line_no=0 fqdn ip
+  while IFS= read -r line; do
+    line_no=$((line_no + 1))
+    [[ -z "$line" || "$line" = \#* ]] && continue
+
+    [[ "$line" =~ ^[^[:space:]]+[[:space:]]+[^[:space:]]+$ ]] || \
+      fail "Invalid record format in ${RECORDS_FILE}:${line_no}. Expected: <fqdn> <ip>"
+
+    fqdn="${line% *}"
+    ip="${line##* }"
+    validate_fqdn "$fqdn" || fail "Invalid FQDN in ${RECORDS_FILE}:${line_no}: ${fqdn}"
+    validate_ipv4 "$ip" || fail "Invalid IP in ${RECORDS_FILE}:${line_no}: ${ip}"
+  done < "$RECORDS_FILE"
+}
+
 do_unbound() {
+  validate_records_file
   common_pkgs
   unbound_pkgs
   configure_resolv_conf
   build_dns_record_block
   render_template "${TEMPLATE_DIR}/unbound.conf.tpl" /etc/unbound/unbound.conf.d/provider-box.conf
+  require_command unbound-checkconf
   unbound-checkconf
   systemctl enable unbound
   systemctl restart unbound
@@ -193,16 +292,31 @@ do_keycloak() {
 
 require_env_vars() {
   local var
-  for var in HOST_IP SEARCH_DOMAIN DNS_FQDN KEYCLOAK_FQDN WORKDIR KEYCLOAK_DIR; do
-    [[ -n "${!var:-}" ]] || { echo "Missing required variable: $var"; exit 1; }
+  for var in HOST_IP SEARCH_DOMAIN DNS_FQDN KEYCLOAK_FQDN ALLOW_NET_1 ALLOW_NET_2 UNBOUND_FORWARDER CHRONY_SERVER_1 CHRONY_SERVER_2 CHRONY_SERVER_3 WORKDIR KEYCLOAK_DIR; do
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
   done
+
+  validate_var_ipv4 "${HOST_IP}"
+  validate_var_fqdn "${SEARCH_DOMAIN}"
+  validate_var_fqdn "${DNS_FQDN}"
+  validate_var_fqdn "${KEYCLOAK_FQDN}"
+  validate_var_cidr "${ALLOW_NET_1}"
+  validate_var_cidr "${ALLOW_NET_2}"
+  validate_var_ipv4 "${UNBOUND_FORWARDER}"
+  validate_var_fqdn "${CHRONY_SERVER_1}"
+  validate_var_fqdn "${CHRONY_SERVER_2}"
+  validate_var_fqdn "${CHRONY_SERVER_3}"
+  validate_var_path "${WORKDIR}"
+  validate_var_path "${KEYCLOAK_DIR}"
 }
 
 require_keycloak_vars() {
   local var
   for var in KEYCLOAK_ADMIN_USER KEYCLOAK_ADMIN_PASSWORD CERT_C CERT_ST CERT_L CERT_O CERT_OU_CA CERT_OU_IDP CERT_CA_CN; do
-    [[ -n "${!var:-}" ]] || { echo "Missing required variable: $var"; exit 1; }
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
   done
+
+  validate_var_not_placeholder "${KEYCLOAK_ADMIN_PASSWORD}"
 }
 
 require_root
