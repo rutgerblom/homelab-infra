@@ -185,7 +185,7 @@ pod-240-vc01.sddc.lab 10.203.240.10
 - Note: Initialization only occurs when `CA_DATA_DIR` does not already contain a step-ca configuration. To reinitialize the CA, remove the contents of `CA_DATA_DIR`.
 - Use `CA_NAME`, `CA_FQDN`, `CA_PROVISIONER_NAME`, and `CA_ENABLE_ACME` to control the initial bootstrap configuration
 - The root certificate can be retrieved from `https://<CA_FQDN>:<CA_PORT>/roots.pem`
-- Clients must trust this certificate to use certificates issued by this CA
+- Import the root certificate into VCF components (vCenter, NSX, etc.) when using this CA for issued certificates
 
 ### Keycloak
 
