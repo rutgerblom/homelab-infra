@@ -12,7 +12,7 @@ Provider Box is a small Ubuntu/Debian bootstrap project for standing up shared i
 
 The repository is intentionally simple: copy the example configuration, update values for your environment, and run the bootstrap script for the services you want.
 
-`bootstrap/provider-box.sh` remains the entrypoint and loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/ca.sh`, `bootstrap/keycloak.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
+`bootstrap/provider-box.sh` is the entrypoint that loads all service modules.
 
 ## VCF Lab Companion
 
