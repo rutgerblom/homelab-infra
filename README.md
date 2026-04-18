@@ -205,4 +205,4 @@ This makes the project safer to reuse in new environments where package availabi
 
 ## Scope
 
-This repository keeps the current structure intact and focuses on a lightweight bootstrap workflow. The `legacy/` directory remains in place as historical reference and is not used by the main bootstrap path.
+This repository focuses on a lightweight, modular bootstrap workflow for shared infrastructure services on a single host. The main path is template-driven, shell-based, and intended to stay simple to understand, adapt, and reuse.
