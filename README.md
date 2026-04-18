@@ -93,7 +93,6 @@ Keycloak-specific validation only runs for `--keycloak` and `--all`. S3-specific
 - Serves the configured search domain as a static local zone
 - Generates both forward and reverse records from `config/unbound.records`
 - Uses the configured upstream forwarder for external lookups
-- Removes the known legacy `/etc/unbound/unbound.conf.d/sddc.conf` file before rendering `provider-box.conf` to avoid duplicate directive conflicts on reruns
 
 Record format:
 
