@@ -56,8 +56,8 @@ issue_keycloak_certificates() {
       --root /home/step/certs/root_ca.crt || \
       fail "Failed to issue a Keycloak certificate from step-ca."
 
-  cat "${cert_dir}/keycloak-leaf.crt" "${CA_DATA_DIR}/certs/intermediate_ca.crt" "${CA_DATA_DIR}/certs/root_ca.crt" > "${cert_dir}/keycloak.crt" || \
-    fail "Failed to build the Keycloak certificate chain."
+  mv "${cert_dir}/keycloak-leaf.crt" "${cert_dir}/keycloak.crt" || \
+    fail "Failed to store the Keycloak certificate chain."
 
   cat "${CA_DATA_DIR}/certs/intermediate_ca.crt" "${CA_DATA_DIR}/certs/root_ca.crt" > "${cert_dir}/keycloak-ca-chain.pem" || \
     fail "Failed to build the Keycloak CA chain bundle."
@@ -71,7 +71,6 @@ issue_keycloak_certificates() {
       --root /home/step/certs/root_ca.crt || \
       fail "Failed to fetch the step-ca root bundle for Keycloak."
 
-  rm -f "${cert_dir}/keycloak-leaf.crt"
   chmod 0644 "${cert_dir}/keycloak.crt" "${cert_dir}/keycloak-ca-chain.pem" "${cert_dir}/keycloak-ca-roots.pem"
   chmod 0600 "${cert_dir}/keycloak.key"
   chown 1000:1000 \
