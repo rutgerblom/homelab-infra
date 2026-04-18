@@ -136,9 +136,3 @@ Important files:
 - External database for Keycloak (PostgreSQL)
 - Environment templating improvements
 - Optional Ansible-based deployment
-
----
-
-## Related
-
-Kubernetes workloads are managed separately via GitOps.
