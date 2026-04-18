@@ -23,7 +23,7 @@ The repository is intentionally simple: copy the example configuration, update v
 - Root or `sudo` access
 - Static IP already configured
 - Access to Ubuntu/Debian package repositories
-- Docker packages available from the host package manager when deploying Keycloak
+- Docker packages available from the host package manager when deploying Keycloak or SeaweedFS S3
 
 ## Repository Layout
 
@@ -58,6 +58,7 @@ cp config/unbound.records.example config/unbound.records
 ```
 
 2. Update `config/provider-box.env` and `config/unbound.records` for your environment.
+   If you enable S3, make sure `S3_FQDN` is also present in `config/unbound.records` so Unbound generates the matching A and PTR records.
 3. Run the bootstrap script for the component you want:
 
 ```bash
@@ -127,6 +128,7 @@ Important output files in `${WORKDIR}`:
 - Uses Docker Compose
 - Exposes the S3-compatible endpoint on `http://<S3_FQDN>:<S3_PORT>`
 - Persists object data under `S3_DATA_DIR`
+- Requires the `S3_FQDN` hostname to be present in `config/unbound.records` if you want it resolvable through the built-in DNS setup
 
 ## Failure Handling
 

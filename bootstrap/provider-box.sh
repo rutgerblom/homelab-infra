@@ -93,7 +93,7 @@ ntp_pkgs() {
   install_pkg chrony
 }
 
-keycloak_pkgs() {
+docker_pkgs() {
   apt_update_once
   install_pkg docker.io docker-compose
   require_command docker

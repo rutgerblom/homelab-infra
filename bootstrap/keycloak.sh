@@ -60,7 +60,7 @@ EOF
 do_keycloak() {
   require_keycloak_vars
   common_pkgs
-  keycloak_pkgs
+  docker_pkgs
   generate_certs
   mkdir -p "${WORKDIR}/keycloak"
   render_template "${TEMPLATE_DIR}/docker-compose.keycloak.yml.tpl" "${WORKDIR}/keycloak/docker-compose.yml"

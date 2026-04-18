@@ -16,7 +16,7 @@ require_s3_vars() {
 do_s3() {
   require_s3_vars
   common_pkgs
-  keycloak_pkgs
+  docker_pkgs
   mkdir -p "${WORKDIR}/s3" "${S3_DATA_DIR}"
   render_template "${TEMPLATE_DIR}/docker-compose.s3.yml.tpl" "${WORKDIR}/s3/docker-compose.yml"
   (
