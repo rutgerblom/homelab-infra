@@ -1,2 +1,25 @@
+# config/unbound.records.example
+# Example records for a VCF-like environment
+# Format:
+# <fqdn> <ip>
+#
+# PTR records are generated automatically by the bootstrap script
+
 host32.sddc.lab 10.203.5.32
 pod-240-vc01.sddc.lab 10.203.240.10
+pod-240-nsx01.sddc.lab 10.203.240.11
+pod-240-nsx02.sddc.lab 10.203.240.12
+pod-240-ops01.sddc.lab 10.203.240.13
+pod-240-collector.sddc.lab 10.203.240.14
+pod-240-vsp01.sddc.lab 10.203.240.15
+pod-240-sddcm.sddc.lab 10.203.240.16
+pod-240-fleet01.sddc.lab 10.203.240.17
+pod-240-int01.sddc.lab 10.203.240.18
+pod-240-vidb.sddc.lab 10.203.240.19
+pod-240-auto.sddc.lab 10.203.240.20
+pod-240-license.sddc.lab 10.203.240.21
+pod-240-autosvc.sddc.lab 10.203.240.56
+pod-240-en1.sddc.lab 10.203.240.57
+pod-240-en2.sddc.lab 10.203.240.58
+auth.sddc.lab 192.168.12.121
+dns.sddc.lab 192.168.12.121
