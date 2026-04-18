@@ -27,6 +27,7 @@ The repository is intentionally simple: copy the example configuration, update v
 - Access to Ubuntu/Debian package repositories
 - `bind9-dnsutils` available from the host package manager for DNS tooling
 - Docker packages available from the host package manager when deploying Keycloak, SeaweedFS S3, or SFTPGo
+- Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13 (trixie), the `docker-compose` package provides this functionality.
 
 ## Repository Layout
 

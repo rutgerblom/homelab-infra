@@ -109,6 +109,8 @@ docker_pkgs() {
   require_command docker
   systemctl enable docker
   systemctl start docker
+  docker compose version >/dev/null 2>&1 || \
+    fail "Docker Compose v2 is required but not available via 'docker compose'"
 }
 
 configure_resolv_conf() {
