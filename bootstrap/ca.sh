@@ -17,6 +17,16 @@ require_ca_vars() {
     fail "CA_PASSWORD_FILE must be located under CA_DATA_DIR so it is mounted into the container"
 }
 
+require_ca_remove_vars() {
+  local var
+  for var in WORKDIR CA_DATA_DIR; do
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
+  done
+
+  validate_var_path "${WORKDIR}"
+  validate_var_path "${CA_DATA_DIR}"
+}
+
 do_ca() {
   common_pkgs
   docker_pkgs
@@ -48,4 +58,22 @@ do_ca() {
     docker compose up -d
   )
   ufw allow "${CA_PORT}/tcp" || true
+}
+
+remove_ca() {
+  local runtime_dir="${WORKDIR}/step-ca"
+  local compose_file="${runtime_dir}/docker-compose.yml"
+
+  require_ca_remove_vars
+
+  if [[ -f "${compose_file}" ]]; then
+    require_command docker
+    (
+      cd "${runtime_dir}"
+      docker compose down || true
+    )
+  fi
+
+  rm -rf "${runtime_dir}"
+  echo "Removed step-ca containers and runtime files. Persistent data in ${CA_DATA_DIR} was preserved."
 }

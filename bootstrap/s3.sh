@@ -14,6 +14,16 @@ require_s3_vars() {
   validate_var_not_placeholder "${S3_SECRET_KEY}"
 }
 
+require_s3_remove_vars() {
+  local var
+  for var in WORKDIR S3_DATA_DIR; do
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
+  done
+
+  validate_var_path "${WORKDIR}"
+  validate_var_path "${S3_DATA_DIR}"
+}
+
 do_s3() {
   require_s3_vars
   common_pkgs
@@ -26,4 +36,22 @@ do_s3() {
     docker compose up -d
   )
   ufw allow "${S3_PORT}/tcp" || true
+}
+
+remove_s3() {
+  local runtime_dir="${WORKDIR}/s3"
+  local compose_file="${runtime_dir}/docker-compose.yml"
+
+  require_s3_remove_vars
+
+  if [[ -f "${compose_file}" ]]; then
+    require_command docker
+    (
+      cd "${runtime_dir}"
+      docker compose down || true
+    )
+  fi
+
+  rm -rf "${runtime_dir}"
+  echo "Removed SeaweedFS containers and runtime files. Persistent data in ${S3_DATA_DIR} was preserved."
 }

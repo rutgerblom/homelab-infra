@@ -28,6 +28,7 @@ The repository is intentionally simple: copy the example configuration, update v
 - [Design Trade-offs](#design-trade-offs)
 - [Repository Layout](#repository-layout)
 - [Development Safeguards](#development-safeguards)
+- [Removing Services](#removing-services)
 - [Failure Handling](#failure-handling)
 - [Operational Notes](#operational-notes)
 - [Scope](#scope)
@@ -372,6 +373,18 @@ pre-commit run --all-files
 ```
 
 The configured Gitleaks hook scans for secrets before commits are created.
+
+## Removing Services
+
+Docker-based services can be removed with `--remove`:
+
+```bash
+sudo bash bootstrap/provider-box.sh --netbox --remove
+sudo bash bootstrap/provider-box.sh --sftp --remove
+sudo bash bootstrap/provider-box.sh --all --remove
+```
+
+Removal stops and removes containers with `docker compose down` and deletes generated runtime files. Persistent data directories are preserved. The remove path is idempotent and safe to run multiple times.
 
 ## Failure Handling
 

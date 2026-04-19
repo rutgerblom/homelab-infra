@@ -17,11 +17,17 @@ Usage:
   sudo bash bootstrap/provider-box.sh --ntp
   sudo bash bootstrap/provider-box.sh --rsyslog
   sudo bash bootstrap/provider-box.sh --ca
+  sudo bash bootstrap/provider-box.sh --ca --remove
   sudo bash bootstrap/provider-box.sh --keycloak
+  sudo bash bootstrap/provider-box.sh --keycloak --remove
   sudo bash bootstrap/provider-box.sh --netbox
+  sudo bash bootstrap/provider-box.sh --netbox --remove
   sudo bash bootstrap/provider-box.sh --s3
+  sudo bash bootstrap/provider-box.sh --s3 --remove
   sudo bash bootstrap/provider-box.sh --sftp
+  sudo bash bootstrap/provider-box.sh --sftp --remove
   sudo bash bootstrap/provider-box.sh --all
+  sudo bash bootstrap/provider-box.sh --all --remove
 USAGE
 }
 
@@ -361,12 +367,41 @@ source "${BOOTSTRAP_DIR}/ca.sh"
 
 require_root
 
-[[ $# -eq 1 ]] || { usage; exit 1; }
+TARGET_SERVICE=""
+REMOVE_MODE=0
 
-case "$1" in
+[[ $# -ge 1 && $# -le 2 ]] || { usage; exit 1; }
+
+for arg in "$@"; do
+  case "$arg" in
+    --remove)
+      [[ "${REMOVE_MODE}" -eq 0 ]] || fail "Duplicate --remove flag"
+      REMOVE_MODE=1
+      ;;
+    --unbound|--ntp|--rsyslog|--ca|--keycloak|--netbox|--s3|--sftp|--all)
+      [[ -z "${TARGET_SERVICE}" ]] || fail "Specify exactly one service flag"
+      TARGET_SERVICE="$arg"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+[[ -n "${TARGET_SERVICE}" ]] || fail "No service flag provided"
+
+case "${TARGET_SERVICE}" in
   --unbound)
     require_env_file
     load_env
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      fail "Removal is not implemented for --unbound"
+    fi
     require_env_vars
     require_records_file
     do_unbound
@@ -374,65 +409,91 @@ case "$1" in
   --ntp)
     require_env_file
     load_env
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      fail "Removal is not implemented for --ntp"
+    fi
     require_env_vars
     do_ntp
     ;;
   --rsyslog)
     require_env_file
     load_env
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      fail "Removal is not implemented for --rsyslog"
+    fi
     require_env_vars
     do_rsyslog
     ;;
   --ca)
     require_env_file
     load_env
-    require_env_vars
-    do_ca
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_ca
+    else
+      require_env_vars
+      do_ca
+    fi
     ;;
   --keycloak)
     require_env_file
     load_env
-    require_env_vars
-    do_keycloak
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_keycloak
+    else
+      require_env_vars
+      do_keycloak
+    fi
     ;;
   --netbox)
     require_env_file
     load_env
-    require_env_vars
-    do_netbox
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_netbox
+    else
+      require_env_vars
+      do_netbox
+    fi
     ;;
   --s3)
     require_env_file
     load_env
-    require_env_vars
-    do_s3
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_s3
+    else
+      require_env_vars
+      do_s3
+    fi
     ;;
   --sftp)
     require_env_file
     load_env
-    require_env_vars
-    do_sftp
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_sftp
+    else
+      require_env_vars
+      do_sftp
+    fi
     ;;
   --all)
     require_env_file
     load_env
-    require_env_vars
-    require_records_file
-    do_unbound
-    do_ntp
-    do_rsyslog
-    do_ca
-    do_keycloak
-    do_netbox
-    do_s3
-    do_sftp
-    ;;
-  -h|--help)
-    usage
-    exit 0
-    ;;
-  *)
-    usage
-    exit 1
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_sftp
+      remove_s3
+      remove_netbox
+      remove_keycloak
+      remove_ca
+    else
+      require_env_vars
+      require_records_file
+      do_unbound
+      do_ntp
+      do_rsyslog
+      do_ca
+      do_keycloak
+      do_netbox
+      do_s3
+      do_sftp
+    fi
     ;;
 esac

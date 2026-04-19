@@ -93,6 +93,18 @@ require_netbox_vars() {
     fail "NETBOX_ALLOWED_HOSTS must include ${NETBOX_FQDN}"
 }
 
+require_netbox_remove_vars() {
+  local var
+  for var in NETBOX_DIR NETBOX_MEDIA_DIR NETBOX_POSTGRES_DATA_DIR NETBOX_REDIS_DATA_DIR; do
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
+  done
+
+  validate_var_path "${NETBOX_DIR}"
+  validate_var_path "${NETBOX_MEDIA_DIR}"
+  validate_var_path "${NETBOX_POSTGRES_DATA_DIR}"
+  validate_var_path "${NETBOX_REDIS_DATA_DIR}"
+}
+
 require_ca_ready_for_netbox() {
   [[ -f "${CA_DATA_DIR}/config/ca.json" ]] || \
     fail "step-ca is not initialized. Run --ca first."
@@ -499,4 +511,23 @@ do_netbox() {
   seed_netbox_via_api
   ufw allow "${NETBOX_PORT}/tcp" || true
   print_netbox_summary
+}
+
+remove_netbox() {
+  local runtime_dir="${NETBOX_DIR}"
+  local compose_file="${runtime_dir}/docker-compose.yml"
+
+  require_netbox_remove_vars
+
+  if [[ -f "${compose_file}" ]]; then
+    require_command docker
+    (
+      cd "${runtime_dir}"
+      docker compose down || true
+    )
+  fi
+
+  rm -f "${NETBOX_DIR}/docker-compose.yml" "${NETBOX_DIR}/nginx.conf"
+  rm -rf "${NETBOX_DIR}/certs"
+  echo "Removed NetBox containers and runtime files. Persistent data in ${NETBOX_MEDIA_DIR}, ${NETBOX_POSTGRES_DATA_DIR}, and ${NETBOX_REDIS_DATA_DIR} was preserved."
 }

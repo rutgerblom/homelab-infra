@@ -30,6 +30,18 @@ require_sftp_vars() {
   validate_var_path "${SFTP_CERT_DIR}"
 }
 
+require_sftp_remove_vars() {
+  local var
+  for var in WORKDIR SFTP_DATA_DIR SFTP_HOME_DIR SFTP_CERT_DIR; do
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
+  done
+
+  validate_var_path "${WORKDIR}"
+  validate_var_path "${SFTP_DATA_DIR}"
+  validate_var_path "${SFTP_HOME_DIR}"
+  validate_var_path "${SFTP_CERT_DIR}"
+}
+
 require_ca_ready_for_sftp() {
   [[ -f "${CA_DATA_DIR}/config/ca.json" ]] || \
     fail "step-ca is not initialized. Run --ca first."
@@ -150,4 +162,22 @@ do_sftp() {
   ufw allow "${SFTP_PORT}/tcp" || true
   ufw allow "${SFTP_ADMIN_PORT}/tcp" || true
   wait_for_sftp_admin_https
+}
+
+remove_sftp() {
+  local runtime_dir="${WORKDIR}/sftpgo"
+  local compose_file="${runtime_dir}/docker-compose.yml"
+
+  require_sftp_remove_vars
+
+  if [[ -f "${compose_file}" ]]; then
+    require_command docker
+    (
+      cd "${runtime_dir}"
+      docker compose down || true
+    )
+  fi
+
+  rm -rf "${runtime_dir}"
+  echo "Removed SFTPGo containers and runtime files. Persistent data in ${SFTP_DATA_DIR}, ${SFTP_HOME_DIR}, and ${SFTP_CERT_DIR} was preserved."
 }

@@ -14,6 +14,16 @@ require_keycloak_ca_vars() {
     fail "CA_PASSWORD_FILE must be located under CA_DATA_DIR so the step-ca container can read it"
 }
 
+require_keycloak_remove_vars() {
+  local var
+  for var in WORKDIR KEYCLOAK_DIR; do
+    [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
+  done
+
+  validate_var_path "${WORKDIR}"
+  validate_var_path "${KEYCLOAK_DIR}"
+}
+
 require_ca_ready_for_keycloak() {
   [[ -f "${CA_DATA_DIR}/config/ca.json" ]] || \
     fail "step-ca is not initialized. Run --ca first."
@@ -96,4 +106,22 @@ do_keycloak() {
     docker compose up -d
   )
   ufw allow 8443/tcp || true
+}
+
+remove_keycloak() {
+  local runtime_dir="${WORKDIR}/keycloak"
+  local compose_file="${runtime_dir}/docker-compose.yml"
+
+  require_keycloak_remove_vars
+
+  if [[ -f "${compose_file}" ]]; then
+    require_command docker
+    (
+      cd "${runtime_dir}"
+      docker compose down || true
+    )
+  fi
+
+  rm -rf "${runtime_dir}"
+  echo "Removed Keycloak containers and runtime files. Persistent data in ${KEYCLOAK_DIR} was preserved."
 }
