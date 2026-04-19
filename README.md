@@ -65,7 +65,7 @@ SECRET_KEY=$(openssl rand -base64 48 | sed 's/[&]/\\&/g') \
 
 ### 3. Run the bootstrap script
 
-Run only the services you want:
+Run only the services you want, or use `--all` to deploy all services in the correct order:
 
 ```bash
 sudo bash bootstrap/provider-box.sh --unbound
