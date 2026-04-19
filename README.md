@@ -128,6 +128,19 @@ cp config/unbound.records.example config/unbound.records
 
 Provider Box service FQDNs are generated automatically based on values in `provider-box.env`.
 
+### Quick Password Setup
+
+To quickly replace all placeholder passwords with a single value:
+
+```bash
+PASSWORD='VMware1!VMware1!' \
+SECRET_KEY=$(openssl rand -base64 48) \
+&& sed -i \
+  -e "s/CHANGE_ME_WITH_AT_LEAST_50_RANDOM_CHARACTERS_BEFORE_USE/$SECRET_KEY/g" \
+  -e "s/CHANGE_ME/$PASSWORD/g" \
+  config/provider-box.env
+```
+
 3. Execute the bootstrap script:
 
 ```bash
