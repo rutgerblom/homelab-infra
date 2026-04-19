@@ -116,6 +116,8 @@ All services must:
   - `<fqdn> <ip>`
   - `<fqdn> <ip/cidr>`
 
+Plain IP values are treated as host addresses and will be imported as `/32` in NetBox.
+
 - If CIDR is present:
   - The subnet must be derived
 
