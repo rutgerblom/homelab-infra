@@ -94,6 +94,37 @@ All services must:
 
 ---
 
+### Canonical Host Identity
+
+- `PROVIDER_BOX_FQDN` defines the canonical host identity for the Provider Box node
+- All built-in service FQDNs resolve to the same host IP
+- Reverse PTR records for the Provider Box host IP must point to `PROVIDER_BOX_FQDN`
+- Service FQDNs must not be used as PTR targets
+- The Provider Box host IP must always have exactly one canonical IP object in NetBox
+
+---
+
+## IP Address Modeling
+
+- `HOST_IP` must use CIDR notation (e.g. `192.168.12.121/24`)
+- The raw IPv4 address must be derived when needed for services
+- CIDR information must be preserved when available
+
+### DNS Records
+
+- Records may use:
+  - `<fqdn> <ip>`
+  - `<fqdn> <ip/cidr>`
+
+- If CIDR is present:
+  - The subnet must be derived
+
+- If CIDR is not present:
+  - The address must be treated as `/32`
+  - No subnet assumptions are allowed
+
+---
+
 ## Validation Rules
 
 - Validation must be service-scoped
@@ -145,6 +176,29 @@ All services must:
   - Redis
 - Must remain single-node
 
+### IPAM Seeding Model
+
+- Create one IP address object per unique address (including mask)
+- Do not create duplicate IP objects for multiple FQDNs pointing to the same address
+
+- The canonical Provider Box host IP must not be created from DNS record imports
+- It must be created explicitly using `HOST_IP` and `PROVIDER_BOX_FQDN`
+
+- Use:
+  - `PROVIDER_BOX_FQDN` as the canonical dns_name for the host IP
+  - Built-in service FQDNs must be stored in the IP object description as generated metadata
+
+- When CIDR is available:
+  - Use the provided mask for the IP address object
+  - Create the corresponding prefix object
+  - Prefix objects must be created in NetBox when CIDR information is available
+
+- When CIDR is not available:
+  - Use `/32` for the IP address object
+  - Do not infer or guess prefixes
+
+- All NetBox seeding must remain idempotent
+
 ### Configuration
 
 - Enforce strong `NETBOX_SECRET_KEY` (>= 50 chars)
@@ -177,6 +231,13 @@ Examples:
 - Unbound must not require NetBox
 
 Cross-service integrations must be additive, not mandatory.
+
+### Cross-Service Behavior
+
+- NetBox seeding must not require Unbound to be deployed
+- Unbound configuration must not depend on NetBox
+- Shared configuration (e.g. DNS records) must be usable independently by each service
+- NetBox must not depend on Unbound-generated DNS blocks for its data model
 
 ---
 
