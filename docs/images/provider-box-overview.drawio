@@ -135,8 +135,8 @@
         <mxCell id="g-c9XfIXmDsZZ0bT9ow5-36" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Upstream DNS&lt;/span&gt;" vertex="1">
           <mxGeometry height="40" width="160" x="1321.78" y="410" as="geometry" />
         </mxCell>
-        <mxCell id="g-c9XfIXmDsZZ0bT9ow5-37" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Docker repos&lt;/span&gt;" vertex="1">
-          <mxGeometry height="40" width="160" x="1327.78" y="270" as="geometry" />
+        <mxCell id="g-c9XfIXmDsZZ0bT9ow5-37" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Docker repositories&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="160" x="1327.78" y="267" as="geometry" />
         </mxCell>
         <mxCell id="g-c9XfIXmDsZZ0bT9ow5-38" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;Upstream NTP&lt;/span&gt;" vertex="1">
           <mxGeometry height="40" width="160" x="1321.78" y="460" as="geometry" />
