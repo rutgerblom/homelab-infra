@@ -201,7 +201,7 @@ Environment variables are exported before template rendering so `envsubst` can c
 
 `HOST_IP` now uses CIDR notation, for example `192.168.12.121/24`. Provider Box derives the raw host address where services need a plain IPv4 value and keeps the subnet information available for NetBox IPAM import.
 
-`PROVIDER_BOX_FQDN` defines the canonical host identity for the shared Provider Box host IP.
+`PROVIDER_BOX_FQDN` defines the canonical host identity for the shared Provider Box host IP. Provider Box service FQDNs remain service endpoints on that same host.
 
 Validation is executed per service based on selected flags.
 
@@ -216,7 +216,7 @@ Validation is executed per service based on selected flags.
 - Generates Provider Box service records automatically
 - Includes `PROVIDER_BOX_FQDN` as the canonical host record for the Provider Box node
 - Uses `config/unbound.records` only for external/custom records
-- Uses `DNS_FQDN` as PTR for the Provider Box host IP
+- Uses `PROVIDER_BOX_FQDN` as the reverse PTR target for the Provider Box host IP
 - Uses configured upstream forwarder for external resolution
 
 Record format:
@@ -293,6 +293,7 @@ Key files:
 - Seeds Provider Box service endpoints into NetBox via the NetBox API after startup
 - Uses `PROVIDER_BOX_FQDN` as the canonical `dns_name` for the shared Provider Box host IP object
 - Stores the built-in Provider Box service FQDNs in that host IP object description
+- Keeps the individual service FQDNs as service endpoints on the same host
 - Imports DNS records from `config/unbound.records` into NetBox via the API as IP address entries with DNS names
 - Imports prefix objects when `HOST_IP` or `config/unbound.records` entries include CIDR information
 - Uses the actual configured mask for NetBox IP address objects when CIDR is known, for example `192.168.12.121/24`

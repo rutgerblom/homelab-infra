@@ -151,7 +151,7 @@ local-data: \"${NETBOX_FQDN} A ${HOST_IPV4}\"
 local-data: \"${S3_FQDN} A ${HOST_IPV4}\"
 local-data: \"${SFTP_FQDN} A ${HOST_IPV4}\"
 local-data: \"${SYSLOG_FQDN} A ${HOST_IPV4}\"
-local-data-ptr: \"${HOST_IPV4} ${DNS_FQDN}\"
+local-data-ptr: \"${HOST_IPV4} ${PROVIDER_BOX_FQDN}\"
 "
   export PROVIDER_BOX_DNS_BLOCK
 }
