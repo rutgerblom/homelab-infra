@@ -1,8 +1,8 @@
 # Provider Box
 
-Provider Box is a lightweight, single-node bootstrap framework for standing up shared infrastructure services on a dedicated provider services node.
+Provider Box is a lightweight, single-node bootstrap framework for standing up shared infrastructure services on a dedicated provider node. It provides a self-contained infrastructure services layer for lab environments.
 
-It is designed for lab and PoC environments, especially VMware Cloud Foundation (VCF). It includes bootstrap support for:
+It is designed for lab and proof-of-concept environments, especially VMware Cloud Foundation (VCF). It includes bootstrap support for:
 
 - Unbound for internal DNS
 - Chrony for internal NTP
@@ -22,13 +22,14 @@ The repository is intentionally simple: copy the example configuration, update v
 - [Quick Start](#quick-start)
 - [Host Assumptions](#host-assumptions)
 - [Choosing Services](#choosing-services)
+- [Service Runtime Model](#service-runtime-model)
+- [Removing Services](#removing-services)
 - [Configuration Model](#configuration-model)
 - [Service Notes](#service-notes)
 - [VCF Lab Companion](#vcf-lab-companion)
 - [Design Trade-offs](#design-trade-offs)
 - [Repository Layout](#repository-layout)
 - [Development Safeguards](#development-safeguards)
-- [Removing Services](#removing-services)
 - [Failure Handling](#failure-handling)
 - [Operational Notes](#operational-notes)
 - [Scope](#scope)
@@ -110,6 +111,44 @@ Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13, t
 
 - SeaweedFS for S3-compatible storage
 - SFTPGo for file transfer
+
+Services are intended to remain independently deployable unless a dependency is explicit and documented.
+
+Examples:
+
+- `--unbound` does not require NetBox
+- `--netbox` does not require Unbound
+- `--s3` and `--sftp` do not require unrelated service configuration
+- step-ca is an intentional dependency for services that use Provider Box-issued TLS certificates
+
+## Service Runtime Model
+
+Provider Box uses a mixed runtime model. Host-based services modify the local system and are not managed via `--remove` (they must be removed manually using system package/service management), while Docker-based services are isolated and can be removed using `--remove`.
+
+| Service   | Runtime |
+|-----------|---------|
+| Unbound  | Host (native service) |
+| Chrony   | Host (native service) |
+| rsyslog  | Host (native service) |
+| step-ca  | Docker Compose |
+| Keycloak | Docker Compose |
+| NetBox   | Docker Compose |
+| SeaweedFS (S3) | Docker Compose |
+| SFTPGo   | Docker Compose |
+
+## Removing Services
+
+Docker-based services can be removed with `--remove`:
+
+```bash
+sudo bash bootstrap/provider-box.sh --netbox --remove
+sudo bash bootstrap/provider-box.sh --sftp --remove
+sudo bash bootstrap/provider-box.sh --all --remove
+```
+
+Removal stops and removes containers with `docker compose down` and deletes generated runtime files under `WORKDIR`. Persistent data directories are preserved. The remove path is idempotent and safe to run multiple times.
+
+When using `--all --remove`, services are removed in reverse dependency order.
 
 ## Configuration Model
 
@@ -259,7 +298,7 @@ This canonical host-IP model is NetBox seeding behavior only. It does not requir
 ### SeaweedFS S3
 
 - Single-node S3-compatible object storage
-- Exposed at `http://<S3_FQDN>:<S3_PORT>`
+- Exposed at `http://<S3_FQDN>:<S3_PORT>` (no TLS by default)
 - Data persisted under `S3_DATA_DIR`
 
 ### SFTPGo
@@ -316,15 +355,6 @@ Over:
 
 It is opinionated for labs and PoCs, not for HA production deployment patterns.
 
-Services are intended to remain independently deployable unless a dependency is explicit and documented.
-
-Examples:
-
-- `--unbound` does not require NetBox
-- `--netbox` does not require Unbound
-- `--s3` and `--sftp` do not require unrelated service configuration
-- step-ca is an intentional dependency for services that use Provider Box-issued TLS certificates
-
 ## Repository Layout
 
 ```text
@@ -373,18 +403,6 @@ pre-commit run --all-files
 ```
 
 The configured Gitleaks hook scans for secrets before commits are created.
-
-## Removing Services
-
-Docker-based services can be removed with `--remove`:
-
-```bash
-sudo bash bootstrap/provider-box.sh --netbox --remove
-sudo bash bootstrap/provider-box.sh --sftp --remove
-sudo bash bootstrap/provider-box.sh --all --remove
-```
-
-Removal stops and removes containers with `docker compose down` and deletes generated runtime files. Persistent data directories are preserved. The remove path is idempotent and safe to run multiple times.
 
 ## Failure Handling
 
