@@ -176,7 +176,7 @@ verify_netbox_stack() {
 }
 
 wait_for_netbox_https() {
-  local attempt http_code
+  local attempt http_code curl_rc
   local frontend_reachable=0
   local backend_pending=0
   local netbox_login_url="https://${NETBOX_FQDN}:${NETBOX_PORT}/login/"
@@ -184,14 +184,17 @@ wait_for_netbox_https() {
   echo "Waiting for NetBox to become ready at ${netbox_login_url}. First start may take several minutes."
 
   for attempt in $(seq 1 120); do
+    set +e
     http_code="$(curl --silent --show-error \
       --output /dev/null \
       --write-out '%{http_code}' \
       --cacert "${CA_DATA_DIR}/certs/root_ca.crt" \
       --resolve "${NETBOX_FQDN}:${NETBOX_PORT}:127.0.0.1" \
-      "${netbox_login_url}" || true)"
+      "${netbox_login_url}" 2>/dev/null)"
+    curl_rc=$?
+    set -e
 
-    if [[ -z "${http_code}" ]]; then
+    if (( curl_rc != 0 )) || [[ -z "${http_code}" ]]; then
       http_code="000"
     fi
 
