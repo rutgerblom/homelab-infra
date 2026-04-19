@@ -193,7 +193,7 @@ Plain IP values are treated as host addresses and will be imported as `/32` in N
 - When CIDR is available:
   - Use the provided mask for the IP address object
   - Create the corresponding prefix object
-  - Prefix objects must be created in NetBox when CIDR information is available
+  - When CIDR information is available, a corresponding prefix object must be created in NetBox
 
 - When CIDR is not available:
   - Use `/32` for the IP address object
