@@ -127,6 +127,8 @@ Provider Box rejects:
 - placeholder secret values such as `CHANGE_ME`
 - malformed DNS record entries
 
+### Host IP and canonical identity
+
 `HOST_IP` uses IPv4 CIDR notation, for example:
 
 ```bash
