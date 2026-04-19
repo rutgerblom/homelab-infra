@@ -1,6 +1,6 @@
 services:
   sftpgo:
-    image: drakkan/sftpgo:2.7.0
+    image: drakkan/sftpgo:v2.7.0
     restart: unless-stopped
     environment:
       SFTPGO_HTTPD__BINDINGS__0__PORT: "8080"
