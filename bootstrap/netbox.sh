@@ -168,11 +168,23 @@ render_netbox_stack() {
 }
 
 verify_netbox_stack() {
-  local service
-  for service in postgres redis netbox netbox-https; do
-    docker compose ps --services --status running | grep -qx "${service}" || \
-      fail "NetBox service '${service}' is not running. Check 'docker compose ps' and 'docker compose logs'."
+  local attempt service missing_services running_services
+
+  for attempt in $(seq 1 60); do
+    running_services="$(docker compose ps --services --status running || true)"
+    missing_services=""
+
+    for service in postgres redis netbox netbox-https; do
+      if ! grep -qx "${service}" <<< "${running_services}"; then
+        missing_services="${missing_services}${service} "
+      fi
+    done
+
+    [[ -z "${missing_services}" ]] && return 0
+    sleep 2
   done
+
+  fail "NetBox services did not all reach running state in time. Missing: ${missing_services% }. Check 'docker compose ps' and 'docker compose logs'."
 }
 
 wait_for_netbox_https() {
