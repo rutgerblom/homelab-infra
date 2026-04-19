@@ -188,25 +188,20 @@ verify_netbox_stack() {
 }
 
 wait_for_netbox_https() {
-  local attempt http_code curl_rc
-  local frontend_reachable=0
-  local backend_pending=0
+  local attempt http_code
   local netbox_login_url="https://${NETBOX_FQDN}:${NETBOX_PORT}/login/"
 
   echo "Waiting for NetBox to become ready at ${netbox_login_url}. First start may take several minutes."
 
   for attempt in $(seq 1 120); do
-    set +e
     http_code="$(curl --silent --show-error \
       --output /dev/null \
       --write-out '%{http_code}' \
       --cacert "${CA_DATA_DIR}/certs/root_ca.crt" \
       --resolve "${NETBOX_FQDN}:${NETBOX_PORT}:127.0.0.1" \
-      "${netbox_login_url}" 2>/dev/null)"
-    curl_rc=$?
-    set -e
+      "${netbox_login_url}" || true)"
 
-    if (( curl_rc != 0 )) || [[ -z "${http_code}" ]]; then
+    if [[ -z "${http_code}" ]]; then
       http_code="000"
     fi
 
@@ -214,29 +209,12 @@ wait_for_netbox_https() {
       200|302)
         return 0
         ;;
-      502)
-        frontend_reachable=1
-        backend_pending=1
-        ;;
-      000)
-        ;;
-      *)
-        frontend_reachable=1
-        ;;
     esac
 
     sleep 5
   done
 
-  if [[ "${backend_pending}" -eq 1 ]]; then
-    fail "NetBox frontend is reachable at https://${NETBOX_FQDN}:${NETBOX_PORT}, but the backend did not become ready in time. Check 'docker compose logs'."
-  fi
-
-  if [[ "${frontend_reachable}" -eq 1 ]]; then
-    fail "NetBox frontend responded at https://${NETBOX_FQDN}:${NETBOX_PORT}, but /login/ never returned HTTP 200 or 302. Check 'docker compose logs'."
-  fi
-
-  fail "NetBox frontend did not become reachable at https://${NETBOX_FQDN}:${NETBOX_PORT}/login/. Check 'docker compose ps' and 'docker compose logs'."
+  fail "NetBox did not become ready at ${netbox_login_url} before timeout. Last observed HTTP status: ${http_code}. Check 'docker compose ps' and 'docker compose logs'."
 }
 
 netbox_api_request() {
