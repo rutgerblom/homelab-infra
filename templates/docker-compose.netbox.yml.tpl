@@ -34,7 +34,7 @@ services:
       - redis
     environment:
       ALLOWED_HOSTS: "${NETBOX_ALLOWED_HOSTS}"
-      CSRF_TRUSTED_ORIGINS: "https://${NETBOX_FQDN}:${NETBOX_PORT} https://${NETBOX_FQDN}"
+      CSRF_TRUSTED_ORIGINS: "${NETBOX_CSRF_TRUSTED_ORIGINS}"
       DB_HOST: postgres
       DB_NAME: "${NETBOX_POSTGRES_DB}"
       DB_USER: "${NETBOX_POSTGRES_USER}"
