@@ -83,7 +83,7 @@ sudo bash bootstrap/provider-box.sh --all
 
 Provider Box assumes:
 
-- Ubuntu or Debian-based host
+- Ubuntu or Debian-based host (Provider Box is developed and tested on Debian GNU/Linux 13 (trixie), but should work on recent Ubuntu releases)
 - root or `sudo` access
 - static IP and prefix already configured on the host
 - network connectivity from lab consumers to this host
