@@ -2,10 +2,11 @@
 
 require_sftp_vars() {
   local var
-  for var in SFTP_FQDN SFTP_PORT SFTP_ADMIN_PORT SFTP_DATA_DIR SFTP_HOME_DIR; do
+  for var in WORKDIR SFTP_FQDN SFTP_PORT SFTP_ADMIN_PORT SFTP_DATA_DIR SFTP_HOME_DIR; do
     [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
   done
 
+  validate_var_path "${WORKDIR}"
   validate_var_fqdn "${SFTP_FQDN}"
   validate_var_port "${SFTP_PORT}"
   validate_var_port "${SFTP_ADMIN_PORT}"

@@ -2,10 +2,11 @@
 
 require_s3_vars() {
   local var
-  for var in S3_FQDN S3_PORT S3_ACCESS_KEY S3_SECRET_KEY S3_DATA_DIR; do
+  for var in WORKDIR S3_FQDN S3_PORT S3_ACCESS_KEY S3_SECRET_KEY S3_DATA_DIR; do
     [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
   done
 
+  validate_var_path "${WORKDIR}"
   validate_var_fqdn "${S3_FQDN}"
   validate_var_port "${S3_PORT}"
   validate_var_path "${S3_DATA_DIR}"

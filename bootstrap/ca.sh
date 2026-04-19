@@ -2,10 +2,11 @@
 
 require_ca_vars() {
   local var
-  for var in CA_FQDN CA_PORT CA_DATA_DIR CA_NAME CA_PROVISIONER_NAME CA_PASSWORD_FILE CA_ENABLE_ACME; do
+  for var in WORKDIR CA_FQDN CA_PORT CA_DATA_DIR CA_NAME CA_PROVISIONER_NAME CA_PASSWORD_FILE CA_ENABLE_ACME; do
     [[ -n "${!var:-}" ]] || fail "Missing required variable: $var"
   done
 
+  validate_var_path "${WORKDIR}"
   validate_var_fqdn "${CA_FQDN}"
   validate_var_port "${CA_PORT}"
   validate_var_path "${CA_DATA_DIR}"
