@@ -87,9 +87,8 @@ Provider Box assumes:
 - root or `sudo` access
 - static IP and prefix already configured on the host
 - network connectivity from lab consumers to this host
-- access to Debian or Ubuntu package repositories
-- `bind9-dnsutils` available for DNS tooling
-- Docker packages available when deploying step-ca, Keycloak, NetBox, SeaweedFS, or SFTPGo
+- access to Debian or Ubuntu package repositories (required packages are installed automatically)
+- access to Docker package repositories (required for containerized services)
 
 Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13, the `docker-compose` package provides this functionality.
 
@@ -103,6 +102,7 @@ Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13, t
 ### Recommended for realistic lab environments
 
 - rsyslog
+- SFTPGo for file transfer
 - step-ca
 - Keycloak
 - NetBox
@@ -110,7 +110,6 @@ Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13, t
 ### Optional depending on use case
 
 - SeaweedFS for S3-compatible storage
-- SFTPGo for file transfer
 
 Services are intended to remain independently deployable unless a dependency is explicit and documented.
 
