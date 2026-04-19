@@ -315,9 +315,12 @@ Key files:
 ### SFTPGo
 
 - Single-node SFTP service via Docker Compose
+- Requires step-ca to be initialized first
 - Exposes:
   - SFTP endpoint
-  - Admin UI
+  - Admin UI over `https://<SFTP_FQDN>:<SFTP_ADMIN_PORT>`
+- Uses a step-ca-issued certificate for the HTTPS admin UI
+- Stores the SFTPGo admin UI certificate under `SFTP_CERT_DIR`
 - No admin user is created automatically
 
 ---
