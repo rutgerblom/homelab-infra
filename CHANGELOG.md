@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Features
+- Add nginx-based VCF offline depot service
+
+### Improvements
+- Centralize container image versions in provider-box.env
+
 ## v0.1.0 - 2026-04-20
 
 ### Features
