@@ -18,6 +18,8 @@ Usage:
   sudo bash bootstrap/provider-box.sh --rsyslog
   sudo bash bootstrap/provider-box.sh --ca
   sudo bash bootstrap/provider-box.sh --ca --remove
+  sudo bash bootstrap/provider-box.sh --depot
+  sudo bash bootstrap/provider-box.sh --depot --remove
   sudo bash bootstrap/provider-box.sh --keycloak
   sudo bash bootstrap/provider-box.sh --keycloak --remove
   sudo bash bootstrap/provider-box.sh --netbox
@@ -152,6 +154,7 @@ build_provider_box_dns_block() {
   PROVIDER_BOX_DNS_BLOCK="local-data: \"${PROVIDER_BOX_FQDN} A ${HOST_IPV4}\"
 local-data: \"${DNS_FQDN} A ${HOST_IPV4}\"
 local-data: \"${CA_FQDN} A ${HOST_IPV4}\"
+local-data: \"${DEPOT_FQDN} A ${HOST_IPV4}\"
 local-data: \"${KEYCLOAK_FQDN} A ${HOST_IPV4}\"
 local-data: \"${NETBOX_FQDN} A ${HOST_IPV4}\"
 local-data: \"${S3_FQDN} A ${HOST_IPV4}\"
@@ -390,6 +393,10 @@ require_module_file "${BOOTSTRAP_DIR}/ca.sh"
 # shellcheck disable=SC1090
 source "${BOOTSTRAP_DIR}/ca.sh"
 
+require_module_file "${BOOTSTRAP_DIR}/depot.sh"
+# shellcheck disable=SC1090
+source "${BOOTSTRAP_DIR}/depot.sh"
+
 require_root
 
 TARGET_SERVICE=""
@@ -403,7 +410,7 @@ for arg in "$@"; do
       [[ "${REMOVE_MODE}" -eq 0 ]] || fail "Duplicate --remove flag"
       REMOVE_MODE=1
       ;;
-    --unbound|--ntp|--rsyslog|--ca|--keycloak|--netbox|--s3|--sftp|--all)
+    --unbound|--ntp|--rsyslog|--ca|--depot|--keycloak|--netbox|--s3|--sftp|--all)
       [[ -z "${TARGET_SERVICE}" ]] || fail "Specify exactly one service flag"
       TARGET_SERVICE="$arg"
       ;;
@@ -459,6 +466,16 @@ case "${TARGET_SERVICE}" in
       do_ca
     fi
     ;;
+  --depot)
+    require_env_file
+    load_env
+    if [[ "${REMOVE_MODE}" -eq 1 ]]; then
+      remove_depot
+    else
+      require_env_vars
+      do_depot
+    fi
+    ;;
   --keycloak)
     require_env_file
     load_env
@@ -507,6 +524,7 @@ case "${TARGET_SERVICE}" in
       remove_s3
       remove_netbox
       remove_keycloak
+      remove_depot
       remove_ca
     else
       require_env_vars
@@ -515,6 +533,7 @@ case "${TARGET_SERVICE}" in
       do_ntp
       do_rsyslog
       do_ca
+      do_depot
       do_keycloak
       do_netbox
       do_s3

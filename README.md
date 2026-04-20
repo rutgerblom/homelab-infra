@@ -8,6 +8,7 @@ It is designed for lab and proof-of-concept environments, especially VMware Clou
 - Chrony for NTP
 - rsyslog for centralized syslog collection
 - step-ca for a lightweight private certificate authority
+- VCF offline depot served by nginx
 - Keycloak for identity
 - NetBox for IPAM, DCIM, and infrastructure source-of-truth
 - SeaweedFS for S3-compatible object storage
@@ -15,7 +16,7 @@ It is designed for lab and proof-of-concept environments, especially VMware Clou
 
 The repository is intentionally simple: copy the example configuration, update values for your environment, and run the bootstrap script for the services you need.
 
-`bootstrap/provider-box.sh` is the entrypoint. It loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/ca.sh`, `bootstrap/keycloak.sh`, `bootstrap/netbox.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
+`bootstrap/provider-box.sh` is the entrypoint. It loads service-specific modules from `bootstrap/dns.sh`, `bootstrap/ntp.sh`, `bootstrap/rsyslog.sh`, `bootstrap/ca.sh`, `bootstrap/depot.sh`, `bootstrap/keycloak.sh`, `bootstrap/netbox.sh`, `bootstrap/s3.sh`, and `bootstrap/sftp.sh`.
 
 ## Overview
 
@@ -77,6 +78,7 @@ sudo bash bootstrap/provider-box.sh --unbound
 sudo bash bootstrap/provider-box.sh --ntp
 sudo bash bootstrap/provider-box.sh --rsyslog
 sudo bash bootstrap/provider-box.sh --ca
+sudo bash bootstrap/provider-box.sh --depot
 sudo bash bootstrap/provider-box.sh --keycloak
 sudo bash bootstrap/provider-box.sh --netbox
 sudo bash bootstrap/provider-box.sh --s3
@@ -109,6 +111,7 @@ Provider Box uses Docker Compose via `docker compose`. On Debian GNU/Linux 13, t
 - rsyslog
 - SFTPGo for file transfer
 - step-ca
+- VCF offline depot
 - Keycloak
 - NetBox
 
@@ -135,6 +138,7 @@ Provider Box uses a mixed runtime model. Host-based services modify the local sy
 | Chrony   | Host (native service) |
 | rsyslog  | Host (native service) |
 | step-ca  | Docker Compose |
+| VCF offline depot | Docker Compose |
 | Keycloak | Docker Compose |
 | NetBox   | Docker Compose |
 | SeaweedFS (S3) | Docker Compose |
@@ -146,6 +150,7 @@ Docker-based services can be removed with `--remove`:
 
 ```bash
 sudo bash bootstrap/provider-box.sh --netbox --remove
+sudo bash bootstrap/provider-box.sh --depot --remove
 sudo bash bootstrap/provider-box.sh --sftp --remove
 sudo bash bootstrap/provider-box.sh --all --remove
 ```
@@ -188,7 +193,7 @@ Provider Box derives the raw host IPv4 address when services need a plain addres
 This distinction is intentional:
 
 - `PROVIDER_BOX_FQDN` is the canonical host FQDN for the shared Provider Box host IP
-- service FQDNs such as `DNS_FQDN`, `CA_FQDN`, `KEYCLOAK_FQDN`, `NETBOX_FQDN`, `S3_FQDN`, `SFTP_FQDN`, and `SYSLOG_FQDN` remain service endpoints on the same host
+- service FQDNs such as `DNS_FQDN`, `CA_FQDN`, `DEPOT_FQDN`, `KEYCLOAK_FQDN`, `NETBOX_FQDN`, `S3_FQDN`, `SFTP_FQDN`, and `SYSLOG_FQDN` remain service endpoints on the same host
 
 ### DNS record format
 
@@ -262,6 +267,30 @@ Important notes:
 - Reinitialization requires deleting the contents of `CA_DATA_DIR`
 - No repository-shipped static CA password file is required
 - The root certificate is available from `/roots.pem`
+
+### VCF offline depot
+
+- Runs as a single-node nginx container via Docker Compose
+- Requires step-ca to be initialized first
+- Exposes:
+  - HTTP over `http://<DEPOT_FQDN>:<DEPOT_HTTP_PORT>`
+  - HTTPS over `https://<DEPOT_FQDN>:<DEPOT_HTTPS_PORT>`
+- Uses a step-ca-issued certificate stored under `DEPOT_CERT_DIR`
+- Stores the managed `htpasswd` file under `DEPOT_AUTH_DIR`
+- Persists depot content under `DEPOT_DATA_DIR`
+- Creates the expected `PROD/COMP`, `PROD/metadata`, and `PROD/vsan/hcl` directory layout during bootstrap
+- Serves both HTTP and HTTPS directly in phase 1 with no forced redirect
+- Protects `/PROD/metadata/`, `/PROD/COMP/`, and `/PROD/COMP/Compatibility/VxrailCompatibilityData.json` with basic auth
+- Leaves `/PROD/vsan/hcl/` and `/healthz` accessible without authentication
+- Renders runtime files under `WORKDIR/depot`
+
+Removal behavior:
+
+- `--depot --remove` runs `docker compose down`
+- Generated runtime files under `WORKDIR/depot` are removed
+- The managed `htpasswd` file is removed and recreated on the next bootstrap run
+- Persistent depot content under `DEPOT_DATA_DIR` is preserved
+- step-ca-issued certificates under `DEPOT_CERT_DIR` are preserved
 
 ### Keycloak
 
@@ -378,6 +407,7 @@ It is opinionated for labs and PoCs, not for HA production deployment patterns.
 ```text
 bootstrap/
   ca.sh
+  depot.sh
   dns.sh
   keycloak.sh
   netbox.sh
@@ -396,10 +426,12 @@ templates/
   chrony.conf.tpl
   rsyslog.conf.tpl
   docker-compose.step-ca.yml.tpl
+  docker-compose.depot.yml.tpl
   docker-compose.keycloak.yml.tpl
   docker-compose.netbox.yml.tpl
   docker-compose.s3.yml.tpl
   docker-compose.sftpgo.yml.tpl
+  depot-nginx.conf.tpl
   netbox-nginx.conf.tpl
 ```
 

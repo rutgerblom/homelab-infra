@@ -56,6 +56,8 @@ ntp|${DNS_FQDN}|udp|123
 syslog-tcp|${SYSLOG_FQDN}|tcp|${SYSLOG_PORT}
 syslog-udp|${SYSLOG_FQDN}|udp|${SYSLOG_PORT}
 step-ca|${CA_FQDN}|tcp|${CA_PORT}
+depot-http|${DEPOT_FQDN}|tcp|${DEPOT_HTTP_PORT}
+depot-https|${DEPOT_FQDN}|tcp|${DEPOT_HTTPS_PORT}
 keycloak|${KEYCLOAK_FQDN}|tcp|8443
 netbox|${NETBOX_FQDN}|tcp|${NETBOX_PORT}
 s3|${S3_FQDN}|tcp|${S3_PORT}
@@ -67,7 +69,7 @@ sftp-admin|${SFTP_FQDN}|tcp|${SFTP_ADMIN_PORT}
 }
 
 build_netbox_provider_box_host_description() {
-  NETBOX_PROVIDER_BOX_HOST_DESCRIPTION="Provider Box services: ${DNS_FQDN}, ${CA_FQDN}, ${KEYCLOAK_FQDN}, ${NETBOX_FQDN}, ${S3_FQDN}, ${SFTP_FQDN}, ${SYSLOG_FQDN}"
+  NETBOX_PROVIDER_BOX_HOST_DESCRIPTION="Provider Box services: ${DNS_FQDN}, ${CA_FQDN}, ${DEPOT_FQDN}, ${KEYCLOAK_FQDN}, ${NETBOX_FQDN}, ${S3_FQDN}, ${SFTP_FQDN}, ${SYSLOG_FQDN}"
   export NETBOX_PROVIDER_BOX_HOST_DESCRIPTION
 }
 
