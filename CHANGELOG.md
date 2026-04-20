@@ -6,7 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ## v0.1.0 - 2026-04-20
 
-### Added
+### Features
 - Initial Provider Box release
-- Bootstrap support for DNS, NTP, syslog, step-ca, Keycloak, NetBox, SeaweedFS, and SFTPGo
-- README, architecture diagram, and bootstrap lifecycle improvements
+- Add bootstrap support for DNS, NTP, syslog, step-ca, Keycloak, NetBox, SeaweedFS, and SFTPGo
+- Add an nginx-based VCF offline depot service with HTTP and HTTPS support
+- Add step-ca-based certificate handling for containerized HTTPS services
+- Add initial Keycloak realm bootstrap support for VCF-style integration
+
+### Improvements
+- Improve README structure, service documentation, and architecture overview
+- Add Docker-service remove support for containerized services
+- Improve CA password handling to avoid a repository-shipped static password file
+- Improve NetBox seeding for Provider Box service endpoints
