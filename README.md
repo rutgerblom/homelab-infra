@@ -363,7 +363,7 @@ This canonical host-IP model is NetBox seeding behavior only. It does not requir
 - Bootstraps the initial admin UI user from `SFTP_ADMIN_USER` and `SFTP_ADMIN_PASSWORD`
 - Default admin bootstrap applies only when no SFTPGo admin user already exists
 
-The SFTP protocol service remains separate from the HTTPS admin UI configuration.
+The SFTP protocol service remains separate from the HTTPS UI configuration.
 
 ## VCF Lab Companion
 
