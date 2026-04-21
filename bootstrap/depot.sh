@@ -151,10 +151,10 @@ issue_depot_certificates() {
 render_depot_basic_auth() {
   local auth_file="${DEPOT_AUTH_DIR}/htpasswd"
 
-  install -d -m 0700 "${DEPOT_AUTH_DIR}"
+  install -d -m 0755 "${DEPOT_AUTH_DIR}"
   htpasswd -bc "${auth_file}" "${DEPOT_BASIC_AUTH_USER}" "${DEPOT_BASIC_AUTH_PASSWORD}" >/dev/null || \
     fail "Failed to generate the depot htpasswd file."
-  chmod 0640 "${auth_file}"
+  chmod 0644 "${auth_file}"
 }
 
 render_depot_stack() {
