@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Agents must also review PROJECT_CONTEXT.md to understand architectural boundaries and scope before implementing changes.
+
 ## Purpose
 
 This repository implements "Provider Box": a lightweight, single-node bootstrap framework for shared infrastructure services used in lab and PoC environments, especially VMware Cloud Foundation (VCF).
