@@ -2,6 +2,13 @@
 
 For AI-assisted development or onboarding, see `PROJECT_CONTEXT.md`.
 
+## Interaction Guidance (for AI assistants)
+
+- Do not introduce abstraction layers unless explicitly requested
+- Do not add migration logic unless explicitly requested
+- Prefer explicit, service-scoped changes over generic frameworks
+- Preserve the single-node, deterministic model
+
 ## Overview
 
 Provider Box is a small, opinionated infrastructure bootstrap project for lab and proof-of-concept environments.
@@ -51,9 +58,11 @@ Each service is:
   sudo bash bootstrap/provider-box.sh --<service>
 
 - removed individually:
-  --<service> --remove
+  sudo bash bootstrap/provider-box.sh --<service> --remove
 
 Loose coupling, with some dependencies (e.g. step-ca).
+
+- services may have startup dependencies (e.g. step-ca)
 
 ---
 
@@ -123,7 +132,7 @@ config/provider-box.env
 
 Principles:
 - explicit values
-- no hidden defaults
+- no implicit defaults
 - service-driven configuration
 
 ---
@@ -142,7 +151,8 @@ S3_IMAGE=...
 SFTPGO_IMAGE=...
 DEPOT_IMAGE=...
 
-Provides a central control plane for image versions.
+Provides a central control plane for all container image versions used by Provider Box.
+All containerized services must source their image from `provider-box.env`.
 
 ---
 
@@ -163,25 +173,30 @@ Provides a central control plane for image versions.
 
 Important:
 - environment variables are substituted
-- runtime variables (e.g. nginx $uri) must be preserved explicitly
+- runtime variables (e.g. nginx $uri) must be preserved explicitly (e.g. via escaping)
 
 ---
 
 ## Directory Model
 
-Persistent data:
-
-/opt/<service>
+Persistent service data:
+/opt/provider-box/<service>
 
 Examples:
-- /opt/step-ca
-- /opt/depot
-- /opt/keycloak
-- /opt/netbox
+- /opt/provider-box/step-ca
+- /opt/provider-box/depot
+- /opt/provider-box/keycloak
+- /opt/provider-box/netbox
 
 Runtime files:
 
 /root/provider-box/<service>
+
+### Path changes
+
+Default persistent service paths now live under `/opt/provider-box`.
+
+Existing installations using the previous `/opt/<service>` layout are not migrated automatically. Path changes must be handled manually or by updating `provider-box.env`.
 
 ---
 
@@ -194,7 +209,7 @@ Runtime files:
 - preserves persistent data
 
 Example:
-- keeps /opt/depot/data
+- keeps /opt/provider-box/depot/data
 - removes /root/provider-box/depot
 
 ---
@@ -207,6 +222,14 @@ Example:
 
 Focus:
 usability over production-grade hardening
+
+---
+
+## Operational Constraints
+
+- Services are started sequentially, not dependency-aware
+- Service readiness is not guaranteed immediately after container start
+- Operators may need to re-run individual services after initial bootstrap
 
 ---
 
@@ -237,6 +260,7 @@ Changes should:
 - follow existing patterns
 - be explicit and readable
 - avoid unnecessary abstraction
+- avoid implicit behavior (e.g. hidden migrations or automatic state changes)
 
 ---
 
