@@ -219,29 +219,9 @@ Environment variables are exported before template rendering so `envsubst` can p
 
 ## Dependency Updates
 
-Container image versions are centrally defined in `config/provider-box.env.example`.
+Container image versions are centrally defined in `config/provider-box.env.example` and kept up to date using Renovate in the Provider Box repository.
 
-Provider Box can optionally use :contentReference[oaicite:0]{index=0} to monitor this file and propose updates when newer image versions are available.
-
-### Behavior
-
-- Only image versions defined in `provider-box.env.example` are managed
-- Updates are proposed via pull requests and must be reviewed manually
-- Major version updates are separated for explicit evaluation
-- No automatic merging is performed
-
-### Design Rationale
-
-Provider Box treats container image versions as an explicit control plane.
-
-This ensures:
-
-- deterministic and reproducible deployments
-- no floating versions (for example `latest`)
-- full visibility of version changes
-- controlled upgrades through manual review
-
-Renovate automates version discovery, while Provider Box retains full control over when and how updates are applied.
+Users consume updated versions by pulling changes to the repository.
 
 ## Service Notes
 
