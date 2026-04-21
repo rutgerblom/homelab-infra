@@ -179,7 +179,8 @@ Important:
 
 ## Directory Model
 
-Persistent service data:
+Persistent service data defaults to:
+
 /opt/provider-box/<service>
 
 Examples:
@@ -188,9 +189,15 @@ Examples:
 - /opt/provider-box/keycloak
 - /opt/provider-box/netbox
 
-Runtime files:
+Runtime files
 
-/root/provider-box/<service>
+Runtime-generated files are created inside the Provider Box working directory (the location where the repository is checked out).
+
+The working directory is the root of the Provider Box repository (the directory containing `bootstrap/`, `templates/`, and `config/`).
+
+Examples:
+- ~/git/provider-box/depot
+- ~/git/provider-box/step-ca
 
 ### Path changes
 
@@ -210,7 +217,7 @@ Existing installations using the previous `/opt/<service>` layout are not migrat
 
 Example:
 - keeps /opt/provider-box/depot/data
-- removes /root/provider-box/depot
+- removes the corresponding runtime directory inside the working directory (e.g. ./depot)
 
 ---
 
