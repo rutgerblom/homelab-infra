@@ -60,9 +60,7 @@ Each service is:
 - removed individually:
   sudo bash bootstrap/provider-box.sh --<service> --remove
 
-Loose coupling, with some dependencies (e.g. step-ca).
-
-- services may have startup dependencies (e.g. step-ca)
+Loose coupling with explicit dependencies (e.g. step-ca).
 
 ---
 
@@ -252,6 +250,10 @@ Provider Box uses service-specific readiness checks to verify that services are 
 - A container being "started" does not imply readiness
 
 This ensures that services are validated based on actual usability rather than internal health mechanisms.
+
+### Idempotency
+
+Service bootstrap operations are designed to be idempotent where possible. Re-running a service bootstrap should not overwrite existing state unless explicitly intended.
 
 ---
 
