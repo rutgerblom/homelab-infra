@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 - Add nginx-based VCF offline depot service
+- Add optional SFTPGo backup-user bootstrap with validation, API-based provisioning, and idempotent create-if-missing behavior
 
 ### Improvements
 - Centralize container image versions in provider-box.env

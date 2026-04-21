@@ -33,6 +33,27 @@ require_sftp_vars() {
   validate_var_path "${SFTP_CERT_DIR}"
   [[ "${SFTPGO_IMAGE}" == *:* ]] || fail "SFTPGO_IMAGE must include an explicit image tag"
   [[ "${SFTPGO_IMAGE}" != *:latest ]] || fail "SFTPGO_IMAGE must not use the latest tag"
+  validate_sftp_backup_user_vars
+}
+
+validate_sftp_backup_user_vars() {
+  local configured=0
+
+  [[ -n "${SFTP_BACKUP_USERNAME:-}" ]] && configured=1
+  [[ -n "${SFTP_BACKUP_PASSWORD:-}" ]] && configured=1
+  [[ -n "${SFTP_BACKUP_HOME_DIR:-}" ]] && configured=1
+
+  [[ "${configured}" -eq 1 ]] || return 0
+
+  [[ -n "${SFTP_BACKUP_USERNAME:-}" ]] || fail "SFTP_BACKUP_USERNAME is required when configuring the SFTP backup user"
+  [[ -n "${SFTP_BACKUP_PASSWORD:-}" ]] || fail "SFTP_BACKUP_PASSWORD is required when configuring the SFTP backup user"
+  [[ -n "${SFTP_BACKUP_HOME_DIR:-}" ]] || fail "SFTP_BACKUP_HOME_DIR is required when configuring the SFTP backup user"
+  [[ "${SFTP_BACKUP_USERNAME}" =~ ^[A-Za-z0-9._-]+$ ]] || \
+    fail "SFTP_BACKUP_USERNAME may only contain letters, numbers, dots, underscores, and hyphens"
+  validate_var_not_placeholder "${SFTP_BACKUP_PASSWORD}"
+  validate_var_path "${SFTP_BACKUP_HOME_DIR}"
+  [[ "${SFTP_BACKUP_HOME_DIR}" == "${SFTP_DATA_DIR}"/* ]] || \
+    fail "SFTP_BACKUP_HOME_DIR must be located under SFTP_DATA_DIR so the SFTPGo container can use it"
 }
 
 require_sftp_remove_vars() {
@@ -141,6 +162,86 @@ wait_for_sftp_admin_https() {
   fail "SFTPGo admin UI did not become ready at ${sftp_admin_url}. Last observed HTTP status: ${http_code}. Check 'docker compose ps' and 'docker compose logs'."
 }
 
+sftp_backup_user_configured() {
+  [[ -n "${SFTP_BACKUP_USERNAME:-}" && -n "${SFTP_BACKUP_PASSWORD:-}" && -n "${SFTP_BACKUP_HOME_DIR:-}" ]]
+}
+
+sftp_json_escape() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/\\r}"
+  value="${value//$'\t'/\\t}"
+  printf '%s' "${value}"
+}
+
+sftp_json_string_field() {
+  local field="$1"
+  sed -n "s/.*\"${field}\":\"\\([^\"]*\\)\".*/\\1/p" | head -n1
+}
+
+sftp_backup_home_dir_in_container() {
+  local relative="${SFTP_BACKUP_HOME_DIR#${SFTP_DATA_DIR}/}"
+  printf '/srv/sftpgo/%s' "${relative}"
+}
+
+sftpgo_api_token() {
+  local response token
+
+  response="$(curl --silent --show-error --fail \
+    --cacert "${CA_DATA_DIR}/certs/root_ca.crt" \
+    --resolve "${SFTP_FQDN}:${SFTP_ADMIN_PORT}:127.0.0.1" \
+    --user "${SFTP_ADMIN_USER}:${SFTP_ADMIN_PASSWORD}" \
+    "https://${SFTP_FQDN}:${SFTP_ADMIN_PORT}/api/v2/token")" || \
+    fail "Failed to obtain an SFTPGo API token for ${SFTP_ADMIN_USER}."
+
+  token="$(printf '%s' "${response}" | sftp_json_string_field access_token)"
+  [[ -n "${token}" ]] || fail "Failed to extract the SFTPGo API token from the token response."
+  printf '%s' "${token}"
+}
+
+ensure_sftp_backup_user() {
+  local token user_url http_code payload backup_home_in_container
+
+  sftp_backup_user_configured || return 0
+
+  install -d -m 0755 "${SFTP_BACKUP_HOME_DIR}"
+  chown -R 1000:1000 "${SFTP_BACKUP_HOME_DIR}"
+  chmod 0755 "${SFTP_BACKUP_HOME_DIR}"
+
+  token="$(sftpgo_api_token)"
+  user_url="https://${SFTP_FQDN}:${SFTP_ADMIN_PORT}/api/v2/users/${SFTP_BACKUP_USERNAME}"
+
+  http_code="$(curl --silent --show-error \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    --cacert "${CA_DATA_DIR}/certs/root_ca.crt" \
+    --resolve "${SFTP_FQDN}:${SFTP_ADMIN_PORT}:127.0.0.1" \
+    -H "Authorization: Bearer ${token}" \
+    "${user_url}" || true)"
+
+  [[ "${http_code}" == "200" ]] && return 0
+  [[ "${http_code}" == "404" ]] || \
+    fail "Failed to check SFTPGo backup user ${SFTP_BACKUP_USERNAME}. HTTP status: ${http_code}"
+
+  backup_home_in_container="$(sftp_backup_home_dir_in_container)"
+  payload="{\"username\":\"$(sftp_json_escape "${SFTP_BACKUP_USERNAME}")\",\"password\":\"$(sftp_json_escape "${SFTP_BACKUP_PASSWORD}")\",\"home_dir\":\"$(sftp_json_escape "${backup_home_in_container}")\",\"status\":1,\"permissions\":{\"/\":[\"*\"]},\"filesystem\":{\"provider\":0}}"
+
+  http_code="$(curl --silent --show-error \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    --cacert "${CA_DATA_DIR}/certs/root_ca.crt" \
+    --resolve "${SFTP_FQDN}:${SFTP_ADMIN_PORT}:127.0.0.1" \
+    -H "Authorization: Bearer ${token}" \
+    -H "Content-Type: application/json" \
+    --data "${payload}" \
+    "https://${SFTP_FQDN}:${SFTP_ADMIN_PORT}/api/v2/users" || true)"
+
+  [[ "${http_code}" == "201" ]] || \
+    fail "Failed to create SFTPGo backup user ${SFTP_BACKUP_USERNAME}. HTTP status: ${http_code}"
+}
+
 do_sftp() {
   require_sftp_vars
   require_sftp_ca_vars
@@ -160,6 +261,7 @@ do_sftp() {
   ufw allow "${SFTP_PORT}/tcp" || true
   ufw allow "${SFTP_ADMIN_PORT}/tcp" || true
   wait_for_sftp_admin_https
+  ensure_sftp_backup_user
 }
 
 remove_sftp() {

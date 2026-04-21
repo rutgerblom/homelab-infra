@@ -362,6 +362,8 @@ This canonical host-IP model is NetBox seeding behavior only. It does not requir
 - Stores the SFTPGo UI certificate under `SFTP_CERT_DIR`
 - Bootstraps the initial admin UI user from `SFTP_ADMIN_USER` and `SFTP_ADMIN_PASSWORD`
 - Default admin bootstrap applies only when no SFTPGo admin user already exists
+- Optionally creates one backup user when `SFTP_BACKUP_USERNAME`, `SFTP_BACKUP_PASSWORD`, and `SFTP_BACKUP_HOME_DIR` are all set
+- Existing backup users are left unchanged on later bootstrap runs
 
 The SFTP protocol service remains separate from the HTTPS UI configuration.
 
