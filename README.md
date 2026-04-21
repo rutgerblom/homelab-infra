@@ -1,6 +1,6 @@
 # Provider Box
 
-Provider Box is a lightweight, single-node bootstrap framework for standing up shared infrastructure services on a dedicated provider node. It provides a self-contained infrastructure services layer for lab environments.
+Provider Box is a lightweight, single-node bootstrap framework for standing up shared infrastructure services on a single dedicated host. It provides a self-contained infrastructure services layer for lab environments.
 
 It is designed for lab and proof-of-concept environments, especially VMware Cloud Foundation (VCF). It includes bootstrap support for:
 
