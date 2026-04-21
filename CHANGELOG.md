@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 - Fix depot basic auth by making the managed htpasswd file readable by nginx
 - Harden certificate directory preparation for step-ca-dependent services
 - Add post-start readiness checks for HTTPS services to fail fast when containers do not become reachable
+- Fix Keycloak readiness checks by probing the user-facing HTTPS endpoint instead of `/health`
 
 ---
 

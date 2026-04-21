@@ -198,23 +198,30 @@ issue_keycloak_certificates() {
 }
 
 wait_for_keycloak_https() {
-  local attempt
-  local keycloak_health_url="https://${KEYCLOAK_FQDN}:${KEYCLOAK_PORT}/health"
+  local attempt http_code
+  local keycloak_url="https://${KEYCLOAK_FQDN}:${KEYCLOAK_PORT}/"
 
-  echo "Waiting for Keycloak to become ready at ${keycloak_health_url}."
+  echo "Waiting for Keycloak HTTPS endpoint to become ready at ${keycloak_url}."
 
   for attempt in $(seq 1 45); do
-    if curl --silent --show-error --fail \
+    http_code="$(curl --silent --show-error \
+      --output /dev/null \
+      --write-out '%{http_code}' \
       --cacert "${CA_DATA_DIR}/certs/root_ca.crt" \
       --resolve "${KEYCLOAK_FQDN}:${KEYCLOAK_PORT}:127.0.0.1" \
-      "${keycloak_health_url}" | grep -q '"status":"UP"'; then
-      echo "Keycloak is ready."
-      return 0
-    fi
+      "${keycloak_url}" || true)"
+
+    case "${http_code}" in
+      200|301|302)
+        echo "Keycloak is ready."
+        return 0
+        ;;
+    esac
+
     sleep 2
   done
 
-  fail "Keycloak failed readiness check at ${keycloak_health_url}. Check logs with: docker compose logs"
+  fail "Keycloak failed readiness check at ${keycloak_url}. Last observed HTTP status: ${http_code}. Check logs with: docker compose logs"
 }
 
 do_keycloak() {
