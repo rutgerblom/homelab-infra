@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Improvements
 - Align Keycloak bootstrap realm defaults with VCF 9, including client settings, redirect URI, and bootstrap user email support.
+- Make the Keycloak bootstrap user part of the default VCF-oriented realm bootstrap
 - Be sure to update your `config/provider-box.env`.
 
 ### Fixes
