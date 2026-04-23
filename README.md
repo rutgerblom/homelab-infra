@@ -319,9 +319,10 @@ Key files:
 Realm bootstrap:
 
 - Uses a repository-managed realm template derived from a working Keycloak realm export and adapted for Provider Box
-- Imports one opinionated initial realm, one bootstrap group, and one baseline OIDC client for VCF or VCF Operations style integration
-- Bootstraps one initial lab user in the bootstrap realm using KEYCLOAK_BOOTSTRAP_USERNAME, KEYCLOAK_BOOTSTRAP_USER_PASSWORD, and KEYCLOAK_BOOTSTRAP_USER_EMAIL_DOMAIN
-- Seeds initial realm state only; it does not provide a generic realm-management framework or mutate existing realms in place
+- Imports one opinionated initial realm, one bootstrap group, and one baseline OIDC client for VCF-style integration
+- Bootstraps one initial lab user in the bootstrap realm using `KEYCLOAK_BOOTSTRAP_USERNAME`, `KEYCLOAK_BOOTSTRAP_USER_PASSWORD`, and `KEYCLOAK_BOOTSTRAP_USER_EMAIL_DOMAIN`
+- Seeds initial realm state only; it does not provide a generic realm-management framework
+- Changes to the realm template are only applied on initial bootstrap; existing realms are not reconciled or modified on subsequent runs
 
 ### NetBox
 
