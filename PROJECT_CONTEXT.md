@@ -78,10 +78,10 @@ Loose coupling with explicit dependencies (e.g. step-ca).
 - Keycloak (OIDC identity provider)
 
 Keycloak bootstrap includes:
-- one opinionated realm
+- one opinionated realm (VCF-oriented)
 - one group
-- one OIDC client
-- optional bootstrap user
+- one OIDC client (VCF SSO)
+- one bootstrap user (lab-admin)
 
 ### Source of Truth
 
