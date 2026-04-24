@@ -146,6 +146,18 @@ require_ca_ready_for_keycloak() {
     fail "step-ca is not reachable on https://${CA_FQDN}:${CA_PORT}. Run --ca first and ensure the CA is healthy."
 }
 
+write_keycloak_full_chain_bundle() {
+  local cert_dir="$1"
+  local cert_file="${cert_dir}/keycloak.crt"
+  local full_chain_file="${cert_dir}/keycloak-full-chain.pem"
+
+  cat "${cert_file}" "${CA_DATA_DIR}/certs/root_ca.crt" > "${full_chain_file}" || \
+    fail "Failed to build the Keycloak full certificate chain bundle."
+
+  chmod 0644 "${full_chain_file}"
+  chown 1000:1000 "${full_chain_file}"
+}
+
 issue_keycloak_certificates() {
   local cert_dir="${KEYCLOAK_DIR}/certs"
   local cert_file="${cert_dir}/keycloak.crt"
@@ -160,6 +172,7 @@ issue_keycloak_certificates() {
 
   if certificate_matches_dns_identity "${cert_file}" "${key_file}" "${KEYCLOAK_FQDN}"; then
     echo "Reusing existing Keycloak certificate for ${KEYCLOAK_FQDN}."
+    write_keycloak_full_chain_bundle "${cert_dir}"
     chown 1000:1000 "${KEYCLOAK_DIR}/data"
     return
   fi
@@ -174,6 +187,7 @@ issue_keycloak_certificates() {
     "${key_file}" \
     "${cert_dir}/keycloak-ca-chain.pem" \
     "${cert_dir}/keycloak-ca-roots.pem" \
+    "${cert_dir}/keycloak-full-chain.pem" \
     "${cert_dir}/keycloak-leaf.crt"
 
   docker run --rm --network host \
@@ -193,6 +207,7 @@ issue_keycloak_certificates() {
 
   cat "${CA_DATA_DIR}/certs/intermediate_ca.crt" "${CA_DATA_DIR}/certs/root_ca.crt" > "${cert_dir}/keycloak-ca-chain.pem" || \
     fail "Failed to build the Keycloak CA chain bundle."
+  write_keycloak_full_chain_bundle "${cert_dir}"
 
   docker run --rm --network host \
     -v "${CA_DATA_DIR}:/home/step" \
@@ -203,7 +218,7 @@ issue_keycloak_certificates() {
       --root /home/step/certs/root_ca.crt || \
       fail "Failed to fetch the step-ca root bundle for Keycloak."
 
-  chmod 0644 "${cert_file}" "${cert_dir}/keycloak-ca-chain.pem" "${cert_dir}/keycloak-ca-roots.pem"
+  chmod 0644 "${cert_file}" "${cert_dir}/keycloak-ca-chain.pem" "${cert_dir}/keycloak-ca-roots.pem" "${cert_dir}/keycloak-full-chain.pem"
   chmod 0600 "${key_file}"
   chown 1000:1000 \
     "${KEYCLOAK_DIR}/data" \
@@ -211,7 +226,8 @@ issue_keycloak_certificates() {
     "${cert_file}" \
     "${key_file}" \
     "${cert_dir}/keycloak-ca-chain.pem" \
-    "${cert_dir}/keycloak-ca-roots.pem"
+    "${cert_dir}/keycloak-ca-roots.pem" \
+    "${cert_dir}/keycloak-full-chain.pem"
 }
 
 wait_for_keycloak_https() {

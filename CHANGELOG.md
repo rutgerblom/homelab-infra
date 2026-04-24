@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## 2026-04-24
+
+### Fixes
+- Add Keycloak full certificate chain bundle for VCF SSO certificate-chain upload
+
 ## 2026-04-23
 
 ### Improvements
