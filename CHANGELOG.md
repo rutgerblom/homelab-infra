@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ### Improvements
 - Make shared bootstrap validation service-scoped so unrelated DNS/NTP settings do not block individual services
+- Add early detection for outdated `provider-box.env` files when required variables are missing from the local configuration
 
 ### Fixes
 - Fix CIDR validation to reject invalid IPv4 prefix lengths and make DNS record parsing handle whitespace consistently

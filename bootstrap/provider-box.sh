@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${REPO_ROOT}/config/provider-box.env"
+ENV_EXAMPLE_FILE="${REPO_ROOT}/config/provider-box.env.example"
 RECORDS_FILE="${REPO_ROOT}/config/unbound.records"
 TEMPLATE_DIR="${REPO_ROOT}/templates"
 BOOTSTRAP_DIR="${REPO_ROOT}/bootstrap"
@@ -44,6 +45,7 @@ fail() {
 
 require_env_file() {
   [[ -f "$ENV_FILE" ]] || fail "Missing ${ENV_FILE}"
+  check_provider_env_is_current
 }
 
 require_records_file() {
@@ -60,6 +62,44 @@ require_module_file() {
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
+}
+
+active_env_vars_in_file() {
+  local file="$1"
+  local line
+
+  while IFS= read -r line; do
+    [[ "${line}" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)= ]] || continue
+    printf '%s\n' "${BASH_REMATCH[1]}"
+  done < "${file}"
+}
+
+check_provider_env_is_current() {
+  local env_vars missing_vars var
+
+  [[ -f "${ENV_EXAMPLE_FILE}" ]] || fail "Missing ${ENV_EXAMPLE_FILE}"
+
+  env_vars="$(active_env_vars_in_file "${ENV_FILE}")"
+  missing_vars=""
+
+  while IFS= read -r var; do
+    [[ -n "${var}" ]] || continue
+    if ! grep -Fxq "${var}" <<< "${env_vars}"; then
+      missing_vars="${missing_vars}${var}"$'\n'
+    fi
+  done < <(active_env_vars_in_file "${ENV_EXAMPLE_FILE}")
+
+  [[ -z "${missing_vars}" ]] && return 0
+
+  echo "Error: ${ENV_FILE} appears outdated." >&2
+  echo "Missing variables from ${ENV_EXAMPLE_FILE}:" >&2
+  while IFS= read -r var; do
+    [[ -n "${var}" ]] || continue
+    echo "  - ${var}" >&2
+  done <<< "${missing_vars}"
+  echo "Update ${ENV_FILE} using ${ENV_EXAMPLE_FILE}." >&2
+  echo "Provider Box does not modify ${ENV_FILE} automatically." >&2
+  exit 1
 }
 
 require_package_installed() {
