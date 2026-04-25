@@ -33,6 +33,19 @@ require_ca_remove_vars() {
   validate_var_path "${CA_DATA_DIR}"
 }
 
+normalize_ca_password_files() {
+  local file
+
+  for file in \
+    "${CA_PASSWORD_FILE}" \
+    "${CA_DATA_DIR}/secrets/password"
+  do
+    [[ -f "${file}" ]] || continue
+    chown 1000:1000 "${file}"
+    chmod 0600 "${file}"
+  done
+}
+
 do_ca() {
   local password_dir password_value
 
@@ -61,6 +74,7 @@ do_ca() {
     printf '%s\n' "${password_value}" > "${CA_PASSWORD_FILE}"
     chmod 600 "${CA_PASSWORD_FILE}"
   fi
+  normalize_ca_password_files
 
   CA_PASSWORD_FILE_IN_CONTAINER="/home/step/${CA_PASSWORD_FILE#${CA_DATA_DIR}/}"
   if [[ "${CA_ENABLE_ACME}" == "true" ]]; then
@@ -77,6 +91,7 @@ do_ca() {
     docker compose down || true
     docker compose up -d
   )
+  normalize_ca_password_files
   ufw allow "${CA_PORT}/tcp" || true
 }
 

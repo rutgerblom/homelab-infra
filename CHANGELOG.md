@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - Fix CIDR validation to reject invalid IPv4 prefix lengths and make DNS record parsing handle whitespace consistently
 - Normalize certificate artifact ownership and permissions when reusing existing step-ca-issued service certificates
 - Make Keycloak full-chain bundle generation explicit for VCF SSO certificate-chain upload
+- Normalize step-ca password file ownership and permissions for both initialization and runtime password files
 
 ## 2026-04-24
 
