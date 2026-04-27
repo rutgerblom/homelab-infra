@@ -341,7 +341,8 @@ Realm bootstrap:
 - Uses a step-ca-issued certificate stored under `${NETBOX_DIR}/certs`
 - Bootstraps the initial superuser from `NETBOX_SUPERUSER_*` variables on first start
 - Seeds Provider Box service endpoints into NetBox via the NetBox API after startup
-- Imports DNS records from `config/unbound.records` into NetBox via the API
+- Imports DNS records from `config/unbound.records` into NetBox via the API during NetBox bootstrap
+- Re-run `sudo bash bootstrap/provider-box.sh --netbox` after changing `config/unbound.records` if you want the changes reflected in NetBox
 
 IPAM behavior:
 
